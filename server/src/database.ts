@@ -1,7 +1,13 @@
 import BetterSqlite3 from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
-const DB_PATH = path.join(__dirname, "..", "race-results.db");
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, "..", "race-results.db");
+
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 const db: BetterSqlite3.Database = new BetterSqlite3(DB_PATH);
 

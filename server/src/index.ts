@@ -16,4 +16,5 @@ app.use("/api/results", resultsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Database: ${process.env.DB_PATH || "race-results.db (default)"}`);
 });

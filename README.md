@@ -25,6 +25,19 @@ npm run dev
 
 The client runs on `http://localhost:5173` and proxies API requests to the server on port 3001.
 
+### Configuration
+
+Copy `.env.example` to `.env` and adjust as needed:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_PATH` | `server/race-results.db` | Path to the SQLite database file (absolute or relative to server dir). Parent directories are created automatically. |
+| `PORT` | `3001` | Server port |
+
 ### Production Build
 
 ```bash
