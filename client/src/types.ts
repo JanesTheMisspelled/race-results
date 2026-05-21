@@ -1,7 +1,10 @@
+export type ResultType = "time" | "distance";
+
 export interface RaceType {
   id: number;
   name: string;
   discipline_fields: string[];
+  result_type: ResultType;
 }
 
 export interface Race {
@@ -11,6 +14,7 @@ export interface Race {
   location: string;
   race_type_name?: string;
   discipline_fields?: string[];
+  result_type?: ResultType;
 }
 
 export interface RaceResult {
@@ -18,6 +22,7 @@ export interface RaceResult {
   race_id: number;
   year: number;
   total_time: number;
+  distance: number;
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes: string;
@@ -28,4 +33,5 @@ export interface RaceResult {
   race_type_id?: number;
   race_type_name?: string;
   discipline_fields?: string[];
+  result_type?: ResultType;
 }

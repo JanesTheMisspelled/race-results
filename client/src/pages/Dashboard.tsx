@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Box, Typography, Grid, Card, CardContent, CardActions, Button, Chip } from "@mui/material";
 import { TrendingUp } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { getRaces, getResults, formatTime } from "../api";
+import { getRaces, getResults, formatResult } from "../api";
 import type { Race, RaceResult } from "../types";
 
 export default function Dashboard() {
@@ -31,6 +31,9 @@ export default function Dashboard() {
               <CardContent>
                 <Typography variant="h6">{race.name}</Typography>
                 <Chip label={race.race_type_name} size="small" sx={{ my: 1 }} />
+                {race.result_type === "distance" && (
+                  <Chip label="Distance" size="small" color="secondary" variant="outlined" sx={{ my: 1, ml: 0.5 }} />
+                )}
                 {race.location && (
                   <Typography variant="body2" color="text.secondary">{race.location}</Typography>
                 )}
@@ -59,7 +62,7 @@ export default function Dashboard() {
             <tr>
               <th>Race</th>
               <th>Year</th>
-              <th>Total Time</th>
+              <th>Result</th>
               <th>Type</th>
             </tr>
           </thead>
@@ -68,7 +71,7 @@ export default function Dashboard() {
               <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/result/${r.id}`)}>
                 <td>{r.race_name}</td>
                 <td>{r.year}</td>
-                <td>{formatTime(r.total_time)}</td>
+                <td>{formatResult(r)}</td>
                 <td><Chip label={r.race_type_name} size="small" /></td>
               </tr>
             ))}

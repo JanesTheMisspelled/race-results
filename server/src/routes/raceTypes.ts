@@ -20,12 +20,13 @@ router.get("/:id", (req: Request, res: Response) => {
 });
 
 router.post("/", (req: Request, res: Response) => {
-  const { name, discipline_fields } = req.body;
+  const { name, discipline_fields, result_type } = req.body;
   if (!name || !Array.isArray(discipline_fields)) {
     return res.status(400).json({ error: "name and discipline_fields are required" });
   }
+  const rtype = result_type === "distance" ? "distance" : "time";
   try {
-    const result = db.prepare("INSERT INTO race_types (name, discipline_fields) VALUES (?, ?)").run(name, JSON.stringify(discipline_fields));
+    const result = db.prepare("INSERT INTO race_types (name, discipline_fields, result_type) VALUES (?, ?, ?)").run(name, JSON.stringify(discipline_fields), rtype);
     const type = db.prepare("SELECT * FROM race_types WHERE id = ?").get(result.lastInsertRowid) as any;
     res.status(201).json({ ...type, discipline_fields: JSON.parse(type.discipline_fields) });
   } catch (err: any) {
@@ -35,15 +36,16 @@ router.post("/", (req: Request, res: Response) => {
 });
 
 router.put("/:id", (req: Request, res: Response) => {
-  const { name, discipline_fields } = req.body;
+  const { name, discipline_fields, result_type } = req.body;
   const existing = db.prepare("SELECT * FROM race_types WHERE id = ?").get(req.params.id) as any;
   if (!existing) return res.status(404).json({ error: "Race type not found" });
 
   const newName = name ?? existing.name;
   const newFields = discipline_fields !== undefined ? discipline_fields : JSON.parse(existing.discipline_fields);
+  const newResultType = result_type === "distance" ? "distance" : (result_type === "time" ? "time" : existing.result_type || "time");
 
   try {
-    db.prepare("UPDATE race_types SET name = ?, discipline_fields = ? WHERE id = ?").run(newName, JSON.stringify(newFields), req.params.id);
+    db.prepare("UPDATE race_types SET name = ?, discipline_fields = ?, result_type = ? WHERE id = ?").run(newName, JSON.stringify(newFields), newResultType, req.params.id);
     const updated = db.prepare("SELECT * FROM race_types WHERE id = ?").get(req.params.id) as any;
     res.json({ ...updated, discipline_fields: JSON.parse(updated.discipline_fields) });
   } catch (err: any) {

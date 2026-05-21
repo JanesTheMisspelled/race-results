@@ -19,10 +19,11 @@ import {
   Chip,
   Snackbar,
   Alert,
+  MenuItem,
 } from "@mui/material";
 import { Add, Edit, Delete } from "@mui/icons-material";
 import { getRaceTypes, createRaceType, updateRaceType, deleteRaceType } from "../api";
-import type { RaceType } from "../types";
+import type { RaceType, ResultType } from "../types";
 
 export default function RaceTypeManager() {
   const [types, setTypes] = useState<RaceType[]>([]);
@@ -30,6 +31,7 @@ export default function RaceTypeManager() {
   const [editingType, setEditingType] = useState<RaceType | null>(null);
   const [formName, setFormName] = useState("");
   const [formFields, setFormFields] = useState<string[]>([]);
+  const [formResultType, setFormResultType] = useState<ResultType>("time");
   const [newField, setNewField] = useState("");
   const [error, setError] = useState("");
 
@@ -43,6 +45,7 @@ export default function RaceTypeManager() {
     setEditingType(null);
     setFormName("");
     setFormFields([]);
+    setFormResultType("time");
     setNewField("");
     setDialogOpen(true);
   };
@@ -51,6 +54,7 @@ export default function RaceTypeManager() {
     setEditingType(t);
     setFormName(t.name);
     setFormFields([...t.discipline_fields]);
+    setFormResultType(t.result_type || "time");
     setNewField("");
     setDialogOpen(true);
   };
@@ -69,9 +73,9 @@ export default function RaceTypeManager() {
   const handleSave = async () => {
     try {
       if (editingType) {
-        await updateRaceType(editingType.id, { name: formName, discipline_fields: formFields });
+        await updateRaceType(editingType.id, { name: formName, discipline_fields: formFields, result_type: formResultType });
       } else {
-        await createRaceType({ name: formName, discipline_fields: formFields });
+        await createRaceType({ name: formName, discipline_fields: formFields, result_type: formResultType });
       }
       setDialogOpen(false);
       loadTypes();
@@ -104,6 +108,7 @@ export default function RaceTypeManager() {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
+              <TableCell>Result Type</TableCell>
               <TableCell>Discipline Fields</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -113,8 +118,16 @@ export default function RaceTypeManager() {
               <TableRow key={t.id}>
                 <TableCell sx={{ textTransform: "capitalize" }}>{t.name}</TableCell>
                 <TableCell>
+                  <Chip
+                    label={t.result_type === "distance" ? "Distance (km)" : "Time"}
+                    size="small"
+                    color={t.result_type === "distance" ? "secondary" : "primary"}
+                    variant="outlined"
+                  />
+                </TableCell>
+                <TableCell>
                   {t.discipline_fields.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">No disciplines (total time only)</Typography>
+                    <Typography variant="body2" color="text.secondary">None</Typography>
                   ) : (
                     t.discipline_fields.map((f) => <Chip key={f} label={f} size="small" sx={{ mr: 0.5 }} />)
                   )}
@@ -137,6 +150,17 @@ export default function RaceTypeManager() {
         <DialogTitle>{editingType ? "Edit Race Type" : "Add Race Type"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
           <TextField label="Type Name" value={formName} onChange={(e) => setFormName(e.target.value)} fullWidth required />
+          <TextField
+            select
+            label="Result Type"
+            value={formResultType}
+            onChange={(e) => setFormResultType(e.target.value as ResultType)}
+            fullWidth
+            required
+          >
+            <MenuItem value="time">Time — how long it took (lower is better)</MenuItem>
+            <MenuItem value="distance">Distance — how far you went (higher is better)</MenuItem>
+          </TextField>
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Discipline Fields (e.g. swim, cycle, run)

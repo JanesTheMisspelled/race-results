@@ -6,7 +6,7 @@ const router = Router();
 router.get("/", (_req: Request, res: Response) => {
   const races = db
     .prepare(
-      `SELECT r.*, rt.name as race_type_name, rt.discipline_fields
+      `SELECT r.*, rt.name as race_type_name, rt.discipline_fields, rt.result_type
        FROM races r
        JOIN race_types rt ON r.race_type_id = rt.id
        ORDER BY r.name`
@@ -23,7 +23,7 @@ router.get("/", (_req: Request, res: Response) => {
 router.get("/:id", (req: Request, res: Response) => {
   const race = db
     .prepare(
-      `SELECT r.*, rt.name as race_type_name, rt.discipline_fields
+      `SELECT r.*, rt.name as race_type_name, rt.discipline_fields, rt.result_type
        FROM races r
        JOIN race_types rt ON r.race_type_id = rt.id
        WHERE r.id = ?`
@@ -40,7 +40,7 @@ router.get("/:id/results", (req: Request, res: Response) => {
   const results = db
     .prepare(
       `SELECT rr.*, r.name as race_name, r.location, r.race_type_id,
-              rt.name as race_type_name, rt.discipline_fields
+              rt.name as race_type_name, rt.discipline_fields, rt.result_type
        FROM race_results rr
        JOIN races r ON rr.race_id = r.id
        JOIN race_types rt ON r.race_type_id = rt.id
@@ -68,7 +68,7 @@ router.post("/", (req: Request, res: Response) => {
     const result = db.prepare("INSERT INTO races (name, race_type_id, location) VALUES (?, ?, ?)").run(name, race_type_id, location || "");
     const race = db
       .prepare(
-        `SELECT r.*, rt.name as race_type_name, rt.discipline_fields
+        `SELECT r.*, rt.name as race_type_name, rt.discipline_fields, rt.result_type
          FROM races r JOIN race_types rt ON r.race_type_id = rt.id
          WHERE r.id = ?`
       )
@@ -94,7 +94,7 @@ router.put("/:id", (req: Request, res: Response) => {
     db.prepare("UPDATE races SET name = ?, race_type_id = ?, location = ? WHERE id = ?").run(newName, newTypeId, newLocation, req.params.id);
     const race = db
       .prepare(
-        `SELECT r.*, rt.name as race_type_name, rt.discipline_fields
+        `SELECT r.*, rt.name as race_type_name, rt.discipline_fields, rt.result_type
          FROM races r JOIN race_types rt ON r.race_type_id = rt.id
          WHERE r.id = ?`
       )

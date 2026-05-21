@@ -31,6 +31,7 @@ export default function ResultForm() {
   const [selectedRaceId, setSelectedRaceId] = useState<number>(preselectedRaceId ? Number(preselectedRaceId) : 0);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [totalTime, setTotalTime] = useState("");
+  const [distance, setDistance] = useState("");
   const [disciplineData, setDisciplineData] = useState<Record<string, string>>({});
   const [additionalInfo, setAdditionalInfo] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -47,7 +48,8 @@ export default function ResultForm() {
       getResult(Number(id)).then((result) => {
         setSelectedRaceId(result.race_id);
         setYear(result.year);
-        setTotalTime(formatTime(result.total_time));
+        setTotalTime(result.total_time ? formatTime(result.total_time) : "");
+        setDistance(result.distance ? String(result.distance) : "");
         setDisciplineData(
           Object.fromEntries(Object.entries(result.discipline_data).map(([k, v]) => [k, formatTime(v)]))
         );
@@ -60,10 +62,19 @@ export default function ResultForm() {
   const selectedRace = races.find((r) => r.id === selectedRaceId);
   const selectedType = raceTypes.find((t) => t.id === selectedRace?.race_type_id);
   const disciplineFields = selectedType?.discipline_fields || [];
+  const isDistanceType = selectedType?.result_type === "distance";
 
   const handleSave = async () => {
-    if (!selectedRaceId || !year || !totalTime) {
-      setError("Race, year, and total time are required");
+    if (!selectedRaceId || !year) {
+      setError("Race and year are required");
+      return;
+    }
+    if (!isDistanceType && !totalTime) {
+      setError("Total time is required for time-based races");
+      return;
+    }
+    if (isDistanceType && !distance) {
+      setError("Distance is required for distance-based races");
       return;
     }
 
@@ -76,7 +87,8 @@ export default function ResultForm() {
     const data = {
       race_id: selectedRaceId,
       year,
-      total_time: parseTime(totalTime),
+      total_time: isDistanceType ? 0 : parseTime(totalTime),
+      distance: isDistanceType ? parseFloat(distance) : 0,
       discipline_data: parsedDiscipline,
       additional_info: Object.fromEntries(Object.entries(additionalInfo).filter(([, v]) => v.trim() !== "")),
       notes,
@@ -132,6 +144,12 @@ export default function ResultForm() {
 
           {selectedRace && (
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Chip
+                label={isDistanceType ? "Distance-based" : "Time-based"}
+                size="small"
+                color={isDistanceType ? "secondary" : "primary"}
+                variant="outlined"
+              />
               <Chip label={selectedRace.race_type_name} size="small" />
               {selectedRace.location && (
                 <Typography variant="body2" color="text.secondary">{selectedRace.location}</Typography>
@@ -148,14 +166,29 @@ export default function ResultForm() {
             slotProps={{ htmlInput: { min: 1900, max: 2100 } }}
           />
 
-          <TextField
-            label="Total Time (HH:MM:SS or MM:SS)"
-            value={totalTime}
-            onChange={(e) => setTotalTime(e.target.value)}
-            fullWidth
-            placeholder="1:30:00"
-            helperText="Format: HH:MM:SS or MM:SS"
-          />
+          {isDistanceType ? (
+            <TextField
+              label="Distance (km)"
+              type="number"
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
+              fullWidth
+              placeholder="42.195"
+              required
+              slotProps={{ htmlInput: { step: "0.01", min: 0 } }}
+              helperText="How far did you go?"
+            />
+          ) : (
+            <TextField
+              label="Total Time (HH:MM:SS or MM:SS)"
+              value={totalTime}
+              onChange={(e) => setTotalTime(e.target.value)}
+              fullWidth
+              placeholder="1:30:00"
+              required
+              helperText="Format: HH:MM:SS or MM:SS"
+            />
+          )}
 
           {disciplineFields.length > 0 && (
             <Box>

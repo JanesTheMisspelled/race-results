@@ -21,7 +21,8 @@ export const getResult = (id: number) => api.get<RaceResult>(`/results/${id}`).t
 export const createResult = (data: {
   race_id: number;
   year: number;
-  total_time: number;
+  total_time?: number;
+  distance?: number;
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes?: string;
@@ -44,4 +45,11 @@ export function parseTime(timeStr: string): number {
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   return parseInt(timeStr, 10) || 0;
+}
+
+export function formatResult(result: RaceResult): string {
+  if (result.result_type === "distance") {
+    return result.distance > 0 ? `${result.distance.toFixed(2)} km` : "-";
+  }
+  return formatTime(result.total_time);
 }

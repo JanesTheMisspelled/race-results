@@ -12,7 +12,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS race_types (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    discipline_fields TEXT NOT NULL DEFAULT '[]'
+    discipline_fields TEXT NOT NULL DEFAULT '[]',
+    result_type TEXT NOT NULL DEFAULT 'time' CHECK(result_type IN ('time', 'distance'))
   );
 
   CREATE TABLE IF NOT EXISTS races (
@@ -28,7 +29,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     race_id INTEGER NOT NULL,
     year INTEGER NOT NULL,
-    total_time INTEGER NOT NULL,
+    total_time INTEGER NOT NULL DEFAULT 0,
+    distance REAL NOT NULL DEFAULT 0,
     discipline_data TEXT NOT NULL DEFAULT '{}',
     additional_info TEXT NOT NULL DEFAULT '{}',
     notes TEXT NOT NULL DEFAULT '',
@@ -38,15 +40,27 @@ db.exec(`
   );
 `);
 
+const hasResultType = db.prepare("PRAGMA table_info(race_types)").all().some((col: any) => col.name === "result_type");
+if (!hasResultType) {
+  db.exec("ALTER TABLE race_types ADD COLUMN result_type TEXT NOT NULL DEFAULT 'time' CHECK(result_type IN ('time', 'distance'))");
+}
+
+const hasDistance = db.prepare("PRAGMA table_info(race_results)").all().some((col: any) => col.name === "distance");
+if (!hasDistance) {
+  db.exec("ALTER TABLE race_results ADD COLUMN distance REAL NOT NULL DEFAULT 0");
+}
+
 const seedRaceTypes = db.prepare("SELECT COUNT(*) as count FROM race_types").get() as { count: number };
 
 if (seedRaceTypes.count === 0) {
-  const insertType = db.prepare("INSERT INTO race_types (name, discipline_fields) VALUES (?, ?)");
-  insertType.run("Running", JSON.stringify([]));
-  insertType.run("Triathlon", JSON.stringify(["swim", "cycle", "run"]));
-  insertType.run("Duathlon", JSON.stringify(["run_1", "cycle", "run_2"]));
-  insertType.run("Swimming", JSON.stringify([]));
-  insertType.run("Cycling", JSON.stringify([]));
+  const insertType = db.prepare("INSERT INTO race_types (name, discipline_fields, result_type) VALUES (?, ?, ?)");
+  insertType.run("Running", JSON.stringify([]), "time");
+  insertType.run("Triathlon", JSON.stringify(["swim", "cycle", "run"]), "time");
+  insertType.run("Duathlon", JSON.stringify(["run_1", "cycle", "run_2"]), "time");
+  insertType.run("Swimming", JSON.stringify([]), "time");
+  insertType.run("Cycling", JSON.stringify([]), "time");
+  insertType.run("Timed Run", JSON.stringify([]), "distance");
+  insertType.run("Timed Cycling", JSON.stringify([]), "distance");
 }
 
 export default db;
