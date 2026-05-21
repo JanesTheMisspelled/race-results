@@ -16,6 +16,7 @@ import {
   IconButton,
   Alert,
   Snackbar,
+  MenuItem,
 } from "@mui/material";
 import { Add, Edit, Delete, TrendingUp } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -139,12 +140,11 @@ export default function ManageRaces() {
             onChange={(e) => setFormTypeId(Number(e.target.value))}
             fullWidth
             required
-            slotProps={{ htmlInput: { sx: { textTransform: "capitalize" } } }}
           >
             {raceTypes.map((t) => (
-              <option key={t.id} value={t.id} style={{ textTransform: "capitalize" }}>
+              <MenuItem key={t.id} value={t.id}>
                 {t.name}
-              </option>
+              </MenuItem>
             ))}
           </TextField>
         </DialogContent>
