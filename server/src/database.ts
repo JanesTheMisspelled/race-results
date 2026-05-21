@@ -1,6 +1,9 @@
+import dotenv from "dotenv";
 import BetterSqlite3 from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+
+dotenv.config({ path: path.resolve(__dirname, "..", "..", ".env") });
 
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "..", "race-results.db");
 
