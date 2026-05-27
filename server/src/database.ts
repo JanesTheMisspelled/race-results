@@ -14,7 +14,7 @@ if (!fs.existsSync(dbDir)) {
 
 const db: BetterSqlite3.Database = new BetterSqlite3(DB_PATH);
 
-db.pragma("journal_mode = WAL");
+db.pragma("journal_mode = DELETE");
 db.pragma("foreign_keys = ON");
 
 db.exec(`
