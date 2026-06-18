@@ -23,6 +23,7 @@ export interface RaceResult {
     discipline_data: Record<string, number>;
     additional_info: Record<string, string>;
     notes: string;
+    organizer_changed: boolean;
     created_at: string;
     updated_at: string;
     race_name?: string;
@@ -60,6 +61,7 @@ export interface CreateRaceResult {
     discipline_data?: Record<string, number>;
     additional_info?: Record<string, string>;
     notes?: string;
+    organizer_changed?: boolean;
 }
 export interface UpdateRaceResult {
     race_id?: number;
@@ -69,6 +71,7 @@ export interface UpdateRaceResult {
     discipline_data?: Record<string, number>;
     additional_info?: Record<string, string>;
     notes?: string;
+    organizer_changed?: boolean;
 }
 export declare const ALLOWED_IMAGE_TYPES: readonly ["image/jpeg", "image/png", "image/webp", "image/gif"];
 export type ImageMimeType = (typeof ALLOWED_IMAGE_TYPES)[number];

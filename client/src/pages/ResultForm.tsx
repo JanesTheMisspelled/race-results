@@ -16,6 +16,8 @@ import {
   Select,
   MenuItem,
   LinearProgress,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { ArrowBack, Add, ArrowUpward, ArrowDownward, Delete } from "@mui/icons-material";
 import {
@@ -48,6 +50,7 @@ export default function ResultForm() {
   const [disciplineData, setDisciplineData] = useState<Record<string, string>>({});
   const [additionalInfo, setAdditionalInfo] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
+  const [organizerChanged, setOrganizerChanged] = useState(false);
   const [newInfoKey, setNewInfoKey] = useState("");
   const [newInfoValue, setNewInfoValue] = useState("");
   const [images, setImages] = useState<RaceImage[]>([]);
@@ -72,6 +75,7 @@ export default function ResultForm() {
         );
         setAdditionalInfo(result.additional_info);
         setNotes(result.notes);
+        setOrganizerChanged(!!result.organizer_changed);
       });
       getResultImages(Number(id))
         .then((imgs) => {
@@ -115,6 +119,7 @@ export default function ResultForm() {
       discipline_data: parsedDiscipline,
       additional_info: Object.fromEntries(Object.entries(additionalInfo).filter(([, v]) => v.trim() !== "")),
       notes,
+      organizer_changed: organizerChanged,
     };
 
     try {
@@ -324,6 +329,21 @@ export default function ResultForm() {
           </Box>
 
           <TextField label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={3} />
+
+          <FormControl sx={{ width: "fit-content" }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={organizerChanged}
+                  onChange={(e) => setOrganizerChanged(e.target.checked)}
+                />
+              }
+              label="Changed by Race Organizer"
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: -0.5, pl: 4 }}>
+              Excluded from the Progress Over Time chart.
+            </Typography>
+          </FormControl>
 
           {isEdit && (
             <Box>

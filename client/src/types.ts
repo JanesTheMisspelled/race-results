@@ -26,6 +26,7 @@ export interface RaceResult {
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes: string;
+  organizer_changed: boolean;
   created_at: string;
   updated_at: string;
   race_name?: string;

@@ -20,6 +20,7 @@ function parseRow(r: any) {
     discipline_data: JSON.parse(r.discipline_data),
     additional_info: JSON.parse(r.additional_info),
     discipline_fields: JSON.parse(r.discipline_fields),
+    organizer_changed: !!r.organizer_changed,
   };
 }
 
@@ -38,7 +39,7 @@ router.get("/:id", (req: Request, res: Response) => {
 });
 
 router.post("/", (req: Request, res: Response) => {
-  const { race_id, year, total_time, distance, discipline_data, additional_info, notes } = req.body;
+  const { race_id, year, total_time, distance, discipline_data, additional_info, notes, organizer_changed } = req.body;
   if (!race_id || !year) {
     return res.status(400).json({ error: "race_id and year are required" });
   }
@@ -46,10 +47,10 @@ router.post("/", (req: Request, res: Response) => {
   try {
     const result = db
       .prepare(
-        `INSERT INTO race_results (race_id, year, total_time, distance, discipline_data, additional_info, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO race_results (race_id, year, total_time, distance, discipline_data, additional_info, notes, organizer_changed)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .run(race_id, year, total_time || 0, distance || 0, JSON.stringify(discipline_data || {}), JSON.stringify(additional_info || {}), notes || "");
+      .run(race_id, year, total_time || 0, distance || 0, JSON.stringify(discipline_data || {}), JSON.stringify(additional_info || {}), notes || "", organizer_changed ? 1 : 0);
 
     const row = db.prepare(`SELECT ${RESULT_FIELDS} ${JOIN} WHERE rr.id = ?`).get(result.lastInsertRowid) as any;
     res.status(201).json(parseRow(row));
@@ -71,13 +72,14 @@ router.put("/:id", (req: Request, res: Response) => {
     discipline_data = JSON.parse(existing.discipline_data),
     additional_info = JSON.parse(existing.additional_info),
     notes = existing.notes,
+    organizer_changed = existing.organizer_changed,
   } = req.body;
 
   db.prepare(
     `UPDATE race_results
-     SET race_id = ?, year = ?, total_time = ?, distance = ?, discipline_data = ?, additional_info = ?, notes = ?, updated_at = datetime('now')
+     SET race_id = ?, year = ?, total_time = ?, distance = ?, discipline_data = ?, additional_info = ?, notes = ?, organizer_changed = ?, updated_at = datetime('now')
      WHERE id = ?`
-  ).run(race_id, year, total_time, distance, JSON.stringify(discipline_data), JSON.stringify(additional_info), notes, req.params.id);
+  ).run(race_id, year, total_time, distance, JSON.stringify(discipline_data), JSON.stringify(additional_info), notes, organizer_changed ? 1 : 0, req.params.id);
 
   const row = db.prepare(`SELECT ${RESULT_FIELDS} ${JOIN} WHERE rr.id = ?`).get(req.params.id) as any;
   res.json(parseRow(row));

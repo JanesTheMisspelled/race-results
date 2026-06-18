@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Grid, Card, CardContent, CardActions, Button, Chip } from "@mui/material";
-import { TrendingUp } from "@mui/icons-material";
+import { Box, Typography, Grid, Card, CardContent, CardActions, Button, Chip, Tooltip } from "@mui/material";
+import { TrendingUp, ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getRaces, getResults, formatResult } from "../api";
 import type { Race, RaceResult } from "../types";
@@ -68,9 +68,25 @@ export default function Dashboard() {
           </thead>
           <tbody>
             {recentResults.map((r) => (
-              <tr key={r.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/result/${r.id}`)}>
+              <tr
+                key={r.id}
+                style={{
+                  cursor: "pointer",
+                  ...(r.organizer_changed ? { backgroundColor: "rgba(237, 108, 2, 0.12)" } : {}),
+                }}
+                onClick={() => navigate(`/result/${r.id}`)}
+              >
                 <td>{r.race_name}</td>
-                <td>{r.year}</td>
+                <td>
+                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                    {r.organizer_changed && (
+                      <Tooltip title="Changed by race organizer">
+                        <ReportProblem fontSize="small" color="warning" />
+                      </Tooltip>
+                    )}
+                    {r.year}
+                  </Box>
+                </td>
                 <td>{formatResult(r)}</td>
                 <td><Chip label={r.race_type_name} size="small" /></td>
               </tr>

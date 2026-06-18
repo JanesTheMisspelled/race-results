@@ -43,6 +43,7 @@ db.exec(`
     discipline_data TEXT NOT NULL DEFAULT '{}',
     additional_info TEXT NOT NULL DEFAULT '{}',
     notes TEXT NOT NULL DEFAULT '',
+    organizer_changed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
@@ -72,6 +73,11 @@ if (!hasResultType) {
 const hasDistance = db.prepare("PRAGMA table_info(race_results)").all().some((col: any) => col.name === "distance");
 if (!hasDistance) {
   db.exec("ALTER TABLE race_results ADD COLUMN distance REAL NOT NULL DEFAULT 0");
+}
+
+const hasOrganizerChanged = db.prepare("PRAGMA table_info(race_results)").all().some((col: any) => col.name === "organizer_changed");
+if (!hasOrganizerChanged) {
+  db.exec("ALTER TABLE race_results ADD COLUMN organizer_changed INTEGER NOT NULL DEFAULT 0");
 }
 
 const seedRaceTypes = db.prepare("SELECT COUNT(*) as count FROM race_types").get() as { count: number };

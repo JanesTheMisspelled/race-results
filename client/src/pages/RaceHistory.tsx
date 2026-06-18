@@ -18,8 +18,9 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
-import { Add, Edit, Delete, ArrowBack, ChevronLeft, ChevronRight } from "@mui/icons-material";
+import { Add, Edit, Delete, ArrowBack, ChevronLeft, ChevronRight, ReportProblem } from "@mui/icons-material";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { getRace, getRaceResults, deleteResult, formatTime, formatResult, getResultImages, imageUrl } from "../api";
 import type { Race, RaceResult, RaceImage } from "../types";
@@ -87,7 +88,10 @@ export default function RaceHistory() {
 
   const isDistanceType = race.result_type === "distance";
 
-  const chartData = results.map((r) => ({
+  const visibleResults = results.filter((r) => !r.organizer_changed);
+  const hiddenCount = results.length - visibleResults.length;
+
+  const chartData = visibleResults.map((r) => ({
     year: r.year,
     value: isDistanceType ? r.distance : r.total_time,
     label: formatResult(r),
@@ -121,29 +125,36 @@ export default function RaceHistory() {
         </Button>
       </Box>
 
-      {chartData.length > 1 && (
+      {(chartData.length > 1 || hiddenCount > 0) && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
             Progress Over Time ({isDistanceType ? "Distance (km)" : "Total Time"})
           </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis
-                domain={isDistanceType ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
-                tickFormatter={formatChartValue}
-              />
-              <Tooltip formatter={(value) => [formatChartValue(Number(value)), isDistanceType ? "Distance" : "Total Time"]} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke={isDistanceType ? "#9c27b0" : "#1976d2"}
-                strokeWidth={2}
-                dot={{ r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {hiddenCount > 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {hiddenCount} result{hiddenCount === 1 ? "" : "s"} hidden — changed by race organizer.
+            </Typography>
+          )}
+          {chartData.length > 1 && (
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis
+                  domain={isDistanceType ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
+                  tickFormatter={formatChartValue}
+                />
+                <Tooltip formatter={(value) => [formatChartValue(Number(value)), isDistanceType ? "Distance" : "Total Time"]} />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke={isDistanceType ? "#9c27b0" : "#1976d2"}
+                  strokeWidth={2}
+                  dot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </Paper>
       )}
 
@@ -169,8 +180,20 @@ export default function RaceHistory() {
             </TableHead>
             <TableBody>
               {results.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>{r.year}</TableCell>
+                <TableRow
+                  key={r.id}
+                  sx={r.organizer_changed ? { backgroundColor: "rgba(237, 108, 2, 0.12)" } : undefined}
+                >
+                  <TableCell>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      {r.organizer_changed && (
+                        <MuiTooltip title="Changed by race organizer">
+                          <ReportProblem fontSize="small" color="warning" />
+                        </MuiTooltip>
+                      )}
+                      {r.year}
+                    </Box>
+                  </TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>{formatResult(r)}</TableCell>
                   {r.discipline_fields &&
                     r.discipline_fields.map((f) => (

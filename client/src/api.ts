@@ -26,6 +26,7 @@ export const createResult = (data: {
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes?: string;
+  organizer_changed?: boolean;
 }) => api.post<RaceResult>("/results", data).then((r) => r.data);
 export const updateResult = (id: number, data: Partial<RaceResult>) => api.put<RaceResult>(`/results/${id}`, data).then((r) => r.data);
 export const deleteResult = (id: number) => api.delete(`/results/${id}`);
