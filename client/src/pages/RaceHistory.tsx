@@ -15,17 +15,22 @@ import {
   Chip,
   Snackbar,
   Alert,
+  Dialog,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
-import { Add, Edit, Delete, ArrowBack } from "@mui/icons-material";
+import { Add, Edit, Delete, ArrowBack, ChevronLeft, ChevronRight } from "@mui/icons-material";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { getRace, getRaceResults, deleteResult, formatTime, formatResult } from "../api";
-import type { Race, RaceResult } from "../types";
+import { getRace, getRaceResults, deleteResult, formatTime, formatResult, getResultImages, imageUrl } from "../api";
+import type { Race, RaceResult, RaceImage } from "../types";
 
 export default function RaceHistory() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [race, setRace] = useState<Race | null>(null);
   const [results, setResults] = useState<RaceResult[]>([]);
+  const [imagesByResult, setImagesByResult] = useState<Record<number, RaceImage[]>>({});
+  const [lightbox, setLightbox] = useState<{ resultId: number; index: number } | null>(null);
   const [error, setError] = useState("");
 
   const loadData = async () => {
@@ -34,6 +39,10 @@ export default function RaceHistory() {
       const [r, res] = await Promise.all([getRace(Number(id)), getRaceResults(Number(id))]);
       setRace(r);
       setResults(res);
+      const entries = await Promise.all(
+        res.map(async (rr) => [rr.id, await getResultImages(rr.id).catch(() => [])] as const)
+      );
+      setImagesByResult(Object.fromEntries(entries));
     } catch {
       setError("Failed to load race data");
     }
@@ -52,6 +61,27 @@ export default function RaceHistory() {
       setError("Failed to delete result");
     }
   };
+
+  const lightboxImages: RaceImage[] = lightbox ? imagesByResult[lightbox.resultId] || [] : [];
+  const currentImage = lightbox && lightboxImages.length ? lightboxImages[lightbox.index] : null;
+
+  const navLightbox = (dir: number) => {
+    setLightbox((prev) => {
+      if (!prev || lightboxImages.length === 0) return prev;
+      return { ...prev, index: (prev.index + dir + lightboxImages.length) % lightboxImages.length };
+    });
+  };
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") navLightbox(-1);
+      if (e.key === "ArrowRight") navLightbox(1);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox, imagesByResult]);
 
   if (!race) return <Typography>Loading...</Typography>;
 
@@ -133,6 +163,7 @@ export default function RaceHistory() {
                   race.discipline_fields.map((f) => <TableCell key={f} sx={{ textTransform: "capitalize" }}>{f}</TableCell>)}
                 <TableCell>Notes</TableCell>
                 <TableCell>Extra Info</TableCell>
+                <TableCell>Photos</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -155,6 +186,24 @@ export default function RaceHistory() {
                         ))
                       : "-"}
                   </TableCell>
+                  <TableCell>
+                    {imagesByResult[r.id] && imagesByResult[r.id].length > 0 ? (
+                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                        {imagesByResult[r.id].map((im, idx) => (
+                          <Box
+                            key={im.id}
+                            component="img"
+                            src={im.thumbnail}
+                            alt={im.caption || im.filename}
+                            onClick={() => setLightbox({ resultId: r.id, index: idx })}
+                            sx={{ width: 40, height: 40, objectFit: "cover", borderRadius: 0.5, cursor: "pointer" }}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => navigate(`/result/${r.id}`)}>
                       <Edit />
@@ -169,6 +218,47 @@ export default function RaceHistory() {
           </Table>
         </TableContainer>
       )}
+
+      <Dialog open={!!lightbox && !!currentImage} onClose={() => setLightbox(null)} maxWidth="md" fullWidth>
+        {currentImage && (
+          <>
+            <DialogContent sx={{ position: "relative", p: 0, overflow: "hidden", lineHeight: 0 }}>
+              <Box
+                component="img"
+                src={imageUrl(currentImage.id)}
+                alt={currentImage.caption || currentImage.filename}
+                sx={{ width: "100%", display: "block" }}
+              />
+              {lightboxImages.length > 1 && (
+                <>
+                  <IconButton
+                    onClick={() => navLightbox(-1)}
+                    sx={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "white", bgcolor: "rgba(0,0,0,0.4)" }}
+                  >
+                    <ChevronLeft />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => navLightbox(1)}
+                    sx={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "white", bgcolor: "rgba(0,0,0,0.4)" }}
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </>
+              )}
+            </DialogContent>
+            {(currentImage.caption || lightboxImages.length > 1) && (
+              <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span>{currentImage.caption || currentImage.filename}</span>
+                {lightboxImages.length > 1 && (
+                  <Typography variant="body2" color="text.secondary">
+                    {lightbox!.index + 1} / {lightboxImages.length}
+                  </Typography>
+                )}
+              </DialogTitle>
+            )}
+          </>
+        )}
+      </Dialog>
 
       <Snackbar open={!!error} autoHideDuration={4000} onClose={() => setError("")}>
         <Alert severity="error" onClose={() => setError("")}>{error}</Alert>

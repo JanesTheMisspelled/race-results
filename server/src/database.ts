@@ -47,6 +47,21 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS race_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    result_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    data BLOB NOT NULL,
+    thumbnail BLOB NOT NULL,
+    caption TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (result_id) REFERENCES race_results(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_race_images_result ON race_images(result_id);
 `);
 
 const hasResultType = db.prepare("PRAGMA table_info(race_types)").all().some((col: any) => col.name === "result_type");

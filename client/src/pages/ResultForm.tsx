@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -15,10 +15,23 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  LinearProgress,
 } from "@mui/material";
-import { ArrowBack, Add } from "@mui/icons-material";
-import { getResult, createResult, updateResult, getRaces, getRaceTypes, formatTime, parseTime } from "../api";
-import type { Race, RaceType } from "../types";
+import { ArrowBack, Add, ArrowUpward, ArrowDownward, Delete } from "@mui/icons-material";
+import {
+  getResult,
+  createResult,
+  updateResult,
+  getRaces,
+  getRaceTypes,
+  formatTime,
+  parseTime,
+  getResultImages,
+  addResultImage,
+  updateImage,
+  deleteImage,
+} from "../api";
+import type { Race, RaceType, RaceImage } from "../types";
 
 export default function ResultForm() {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +50,11 @@ export default function ResultForm() {
   const [notes, setNotes] = useState("");
   const [newInfoKey, setNewInfoKey] = useState("");
   const [newInfoValue, setNewInfoValue] = useState("");
+  const [images, setImages] = useState<RaceImage[]>([]);
+  const [captionDrafts, setCaptionDrafts] = useState<Record<number, string>>({});
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([getRaces(), getRaceTypes()]).then(([r, t]) => {
@@ -56,6 +73,12 @@ export default function ResultForm() {
         setAdditionalInfo(result.additional_info);
         setNotes(result.notes);
       });
+      getResultImages(Number(id))
+        .then((imgs) => {
+          setImages(imgs);
+          setCaptionDrafts(Object.fromEntries(imgs.map((im) => [im.id, im.caption || ""])));
+        })
+        .catch(() => setError("Failed to load images"));
     }
   }, [id]);
 
@@ -118,6 +141,81 @@ export default function ResultForm() {
     const copy = { ...additionalInfo };
     delete copy[key];
     setAdditionalInfo(copy);
+  };
+
+  const readFileAsDataURL = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    if (images.length + files.length > 20) {
+      setError("Maximum 20 images per result");
+      return;
+    }
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const dataUrl = await readFileAsDataURL(file);
+        const added = await addResultImage(Number(id), {
+          filename: file.name,
+          mime_type: file.type,
+          data: dataUrl,
+        });
+        setImages((prev) => [...prev, added]);
+        setCaptionDrafts((d) => ({ ...d, [added.id]: added.caption || "" }));
+      }
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string } } };
+      setError(e?.response?.data?.error || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCaptionBlur = async (image: RaceImage, value: string) => {
+    if (value === (image.caption || "")) return;
+    try {
+      const updated = await updateImage(image.id, { caption: value });
+      setImages((prev) => prev.map((im) => (im.id === image.id ? updated : im)));
+      setCaptionDrafts((d) => ({ ...d, [image.id]: value }));
+    } catch {
+      setError("Failed to save caption");
+    }
+  };
+
+  const moveImage = async (index: number, dir: -1 | 1) => {
+    const newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= images.length) return;
+    const a = images[index];
+    const b = images[newIndex];
+    const reordered = [...images];
+    [reordered[index], reordered[newIndex]] = [reordered[newIndex], reordered[index]];
+    setImages(reordered);
+    try {
+      await Promise.all([
+        updateImage(a.id, { sort_order: b.sort_order }),
+        updateImage(b.id, { sort_order: a.sort_order }),
+      ]);
+    } catch {
+      setError("Failed to reorder image");
+      getResultImages(Number(id)).then(setImages).catch(() => undefined);
+    }
+  };
+
+  const handleDeleteImage = async (imageId: number) => {
+    try {
+      await deleteImage(imageId);
+      setImages((prev) => prev.filter((im) => im.id !== imageId));
+    } catch {
+      setError("Failed to delete image");
+    }
   };
 
   return (
@@ -226,6 +324,78 @@ export default function ResultForm() {
           </Box>
 
           <TextField label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth multiline rows={3} />
+
+          {isEdit && (
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="subtitle1">Photos</Typography>
+                <Button
+                  size="small"
+                  startIcon={<Add />}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || images.length >= 20}
+                >
+                  Add Photos
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  hidden
+                  onChange={handleFileSelect}
+                />
+              </Box>
+              {uploading && <LinearProgress sx={{ mb: 1 }} />}
+              {images.length === 0 && !uploading ? (
+                <Typography variant="body2" color="text.secondary">
+                  No photos yet.
+                </Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {images.map((im, idx) => (
+                    <Grid size={{ xs: 12, sm: 6 }} key={im.id}>
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Box
+                          component="img"
+                          src={im.thumbnail}
+                          alt={im.filename}
+                          sx={{ width: 80, height: 80, objectFit: "cover", borderRadius: 1, flexShrink: 0 }}
+                        />
+                        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                          <TextField
+                            size="small"
+                            label="Caption"
+                            value={captionDrafts[im.id] ?? ""}
+                            onChange={(e) =>
+                              setCaptionDrafts((d) => ({ ...d, [im.id]: e.target.value }))
+                            }
+                            onBlur={(e) => handleCaptionBlur(im, e.target.value)}
+                            fullWidth
+                          />
+                          <Box sx={{ display: "flex", gap: 0.5 }}>
+                            <IconButton size="small" disabled={idx === 0} onClick={() => moveImage(idx, -1)}>
+                              <ArrowUpward fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              disabled={idx === images.length - 1}
+                              onClick={() => moveImage(idx, 1)}
+                            >
+                              <ArrowDownward fontSize="small" />
+                            </IconButton>
+                            <IconButton size="small" color="error" onClick={() => handleDeleteImage(im.id)}>
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+          )}
 
           <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
             <Button onClick={() => navigate(-1)}>Cancel</Button>

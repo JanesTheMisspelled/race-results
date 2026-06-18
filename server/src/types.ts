@@ -79,3 +79,29 @@ export interface UpdateRaceResult {
   additional_info?: Record<string, string>;
   notes?: string;
 }
+
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+export type ImageMimeType = (typeof ALLOWED_IMAGE_TYPES)[number];
+
+export interface RaceImage {
+  id: number;
+  result_id: number;
+  filename: string;
+  mime_type: string;
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+  thumbnail?: string;
+}
+
+export interface CreateRaceImage {
+  filename: string;
+  mime_type: string;
+  data: string;
+  caption?: string;
+}
+
+export interface UpdateRaceImage {
+  caption?: string;
+  sort_order?: number;
+}

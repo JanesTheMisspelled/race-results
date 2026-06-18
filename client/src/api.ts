@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { RaceType, Race, RaceResult } from "./types";
+import type { RaceType, Race, RaceResult, RaceImage } from "./types";
 
 const api = axios.create({ baseURL: "/api" });
 
@@ -31,6 +31,17 @@ export const updateResult = (id: number, data: Partial<RaceResult>) => api.put<R
 export const deleteResult = (id: number) => api.delete(`/results/${id}`);
 
 export const getRaceResults = (raceId: number) => api.get<RaceResult[]>(`/races/${raceId}/results`).then((r) => r.data);
+
+export const getResultImages = (resultId: number) =>
+  api.get<RaceImage[]>(`/results/${resultId}/images`).then((r) => r.data);
+export const addResultImage = (
+  resultId: number,
+  data: { filename: string; mime_type: string; data: string; caption?: string }
+) => api.post<RaceImage>(`/results/${resultId}/images`, data).then((r) => r.data);
+export const updateImage = (id: number, data: { caption?: string; sort_order?: number }) =>
+  api.put<RaceImage>(`/images/${id}`, data).then((r) => r.data);
+export const deleteImage = (id: number) => api.delete(`/images/${id}`);
+export const imageUrl = (id: number) => `/api/images/${id}`;
 
 export function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);

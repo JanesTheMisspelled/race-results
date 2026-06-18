@@ -35,3 +35,14 @@ export interface RaceResult {
   discipline_fields?: string[];
   result_type?: ResultType;
 }
+
+export interface RaceImage {
+  id: number;
+  result_id: number;
+  filename: string;
+  mime_type: string;
+  caption: string | null;
+  sort_order: number;
+  created_at: string;
+  thumbnail?: string;
+}

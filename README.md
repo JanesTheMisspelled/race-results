@@ -4,7 +4,7 @@ A web application for storing and tracking race results over time. Supports diff
 
 ## Tech Stack
 
-- **Backend**: Node.js, Express, TypeScript, SQLite (better-sqlite3)
+- **Backend**: Node.js, Express, TypeScript, SQLite (better-sqlite3), Sharp (image thumbnails)
 - **Frontend**: React, TypeScript, Material UI, Recharts, React Router
 
 ## Getting Started
@@ -52,6 +52,7 @@ npm run build
 - **Results** — Per-year results with discipline splits, arbitrary additional info (weather, etc.), and notes
 - **Dashboard** — Overview of all races and recent results
 - **Race History** — Line chart showing progress over years, with a full results table
+- **Photos** — Upload images per result (stored in SQLite); thumbnails shown on race history with a lightbox viewer
 - **CRUD** — Full create, read, update, delete for race types, races, and results
 
 ## Project Structure
@@ -66,7 +67,8 @@ race-results/
 │   │   └── routes/
 │   │       ├── raceTypes.ts  # Race type CRUD
 │   │       ├── races.ts      # Race CRUD + history endpoint
-│   │       └── results.ts    # Result CRUD
+│   │       ├── results.ts    # Result CRUD
+│   │       └── images.ts     # Image upload/list/get/update/delete (sharp thumbnails)
 │   └── package.json
 ├── client/                   # React + Vite frontend
 │   ├── src/
@@ -119,6 +121,16 @@ race-results/
 | PUT | `/api/results/:id` | Update a result |
 | DELETE | `/api/results/:id` | Delete a result |
 
+### Images
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/results/:id/images` | List image metadata for a result (includes base64 thumbnail; no full `data`) |
+| POST | `/api/results/:id/images` | Upload one image (`{filename, mime_type, data(base64 or data:URI), caption?}`). Max 10 MB / file, ≤20 / result, jpg/png/webp/gif. |
+| GET | `/api/images/:id` | Get the full-size image bytes (immutable, long-cache) |
+| PUT | `/api/images/:id` | Update `{caption?}` and/or `{sort_order?}` |
+| DELETE | `/api/images/:id` | Delete an image |
+
 ## Database Schema
 
 ### race_types
@@ -150,6 +162,19 @@ race-results/
 | notes | TEXT | Free-text notes |
 | created_at | TEXT | Timestamp |
 | updated_at | TEXT | Timestamp |
+
+### race_images
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER PK | Auto-increment |
+| result_id | INTEGER FK | References race_results (CASCADE delete) |
+| filename | TEXT | Original filename (display only) |
+| mime_type | TEXT | `image/jpeg`, `image/png`, `image/webp`, or `image/gif` |
+| data | BLOB | Full-size image bytes |
+| thumbnail | BLOB | Auto-generated ~400px WebP preview |
+| caption | TEXT | Optional caption (nullable) |
+| sort_order | INTEGER | Display order (auto = max+1 on insert) |
+| created_at | TEXT | Timestamp |
 
 ## Seed Data
 
