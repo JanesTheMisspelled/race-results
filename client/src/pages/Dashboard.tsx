@@ -21,6 +21,10 @@ export default function Dashboard() {
 
   const recentResults = results.slice(0, 10);
   const typesWithResults = raceTypes.filter((t) => results.some((r) => r.race_type_id === t.id));
+  const resultCountByRace = new Map<number, number>();
+  results.forEach((r) => resultCountByRace.set(r.race_id, (resultCountByRace.get(r.race_id) ?? 0) + 1));
+  const resultCountByType = new Map<number, number>();
+  results.forEach((r) => resultCountByType.set(r.race_type_id, (resultCountByType.get(r.race_type_id) ?? 0) + 1));
 
   return (
     <>
@@ -35,17 +39,22 @@ export default function Dashboard() {
             {races.map((race) => (
               <ListItem disablePadding divider key={race.id}>
                 <ListItemButton onClick={() => navigate(`/race/${race.id}`)} sx={{ py: 1 }}>
-                  <Box sx={{ width: "100%" }}>
-                    <Typography variant="body2">{race.name}</Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5, mt: 0.5 }}>
-                      <Chip label={race.race_type_name} size="small" />
-                      {race.result_type === "distance" && (
-                        <Chip label="Distance" size="small" color="secondary" variant="outlined" />
-                      )}
-                      {race.location && (
-                        <Typography variant="caption" color="text.secondary">· {race.location}</Typography>
-                      )}
+                  <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="body2">{race.name}</Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+                        <Chip label={race.race_type_name} size="small" />
+                        {race.result_type === "distance" && (
+                          <Chip label="Distance" size="small" color="secondary" variant="outlined" />
+                        )}
+                        {race.location && (
+                          <Typography variant="caption" color="text.secondary">· {race.location}</Typography>
+                        )}
+                      </Box>
                     </Box>
+                    <Tooltip title={`${resultCountByRace.get(race.id) ?? 0} results`}>
+                      <Chip label={resultCountByRace.get(race.id) ?? 0} size="small" />
+                    </Tooltip>
                   </Box>
                 </ListItemButton>
               </ListItem>
@@ -64,19 +73,24 @@ export default function Dashboard() {
             {typesWithResults.map((t) => (
               <ListItem disablePadding divider key={t.id}>
                 <ListItemButton onClick={() => navigate(`/race-type/${t.id}`)} sx={{ py: 1 }}>
-                  <Box sx={{ width: "100%" }}>
-                    <Typography variant="body2" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
-                      <Chip
-                        label={t.result_type === "distance" ? "Distance" : "Time"}
-                        size="small"
-                        color={t.result_type === "distance" ? "secondary" : "primary"}
-                        variant="outlined"
-                      />
-                      {t.discipline_fields.map((f) => (
-                        <Chip key={f} label={f} size="small" sx={{ textTransform: "capitalize" }} />
-                      ))}
+                  <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="body2" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
+                        <Chip
+                          label={t.result_type === "distance" ? "Distance" : "Time"}
+                          size="small"
+                          color={t.result_type === "distance" ? "secondary" : "primary"}
+                          variant="outlined"
+                        />
+                        {t.discipline_fields.map((f) => (
+                          <Chip key={f} label={f} size="small" sx={{ textTransform: "capitalize" }} />
+                        ))}
+                      </Box>
                     </Box>
+                    <Tooltip title={`${resultCountByType.get(t.id) ?? 0} results`}>
+                      <Chip label={resultCountByType.get(t.id) ?? 0} size="small" />
+                    </Tooltip>
                   </Box>
                 </ListItemButton>
               </ListItem>
