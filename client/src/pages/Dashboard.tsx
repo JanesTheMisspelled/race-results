@@ -24,7 +24,10 @@ export default function Dashboard() {
   const resultCountByRace = new Map<number, number>();
   results.forEach((r) => resultCountByRace.set(r.race_id, (resultCountByRace.get(r.race_id) ?? 0) + 1));
   const resultCountByType = new Map<number, number>();
-  results.forEach((r) => resultCountByType.set(r.race_type_id, (resultCountByType.get(r.race_type_id) ?? 0) + 1));
+  results.forEach((r) => {
+    if (r.race_type_id == null) return;
+    resultCountByType.set(r.race_type_id, (resultCountByType.get(r.race_type_id) ?? 0) + 1);
+  });
 
   return (
     <>
