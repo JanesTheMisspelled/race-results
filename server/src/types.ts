@@ -36,6 +36,11 @@ export interface RaceResult {
   race_type_name?: string;
   discipline_fields?: string[];
   result_type?: ResultType;
+  is_shadow?: boolean;
+  shadow_discipline?: string;
+  shadow_parent_result_id?: number;
+  shadow_source_race_type_id?: number;
+  shadow_source_race_type_name?: string;
 }
 
 export interface CreateRaceType {
@@ -110,4 +115,19 @@ export interface CreateRaceImage {
 export interface UpdateRaceImage {
   caption?: string;
   sort_order?: number;
+}
+
+export interface RaceTypeShadow {
+  id: number;
+  source_race_type_id: number;
+  discipline_field: string;
+  target_race_type_id: number;
+  created_at: string;
+  target_race_type_name?: string;
+  target_result_type?: ResultType;
+}
+
+export interface CreateRaceTypeShadow {
+  discipline_field: string;
+  target_race_type_id: number;
 }

@@ -62,7 +62,19 @@ db.exec(`
     FOREIGN KEY (result_id) REFERENCES race_results(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS race_type_shadows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_race_type_id INTEGER NOT NULL,
+    discipline_field TEXT NOT NULL,
+    target_race_type_id INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (source_race_type_id) REFERENCES race_types(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_race_type_id) REFERENCES race_types(id) ON DELETE CASCADE,
+    UNIQUE(source_race_type_id, discipline_field, target_race_type_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_race_images_result ON race_images(result_id);
+  CREATE INDEX IF NOT EXISTS idx_race_type_shadows_target ON race_type_shadows(target_race_type_id);
 `);
 const hasResultType = db.prepare("PRAGMA table_info(race_types)").all().some((col) => col.name === "result_type");
 if (!hasResultType) {

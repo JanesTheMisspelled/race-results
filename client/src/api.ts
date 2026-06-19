@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { RaceType, Race, RaceResult, RaceImage } from "./types";
+import type { RaceType, Race, RaceResult, RaceImage, RaceTypeShadow } from "./types";
 
 const api = axios.create({ baseURL: "/api" });
 
@@ -10,6 +10,13 @@ export const getRaceTypeResults = (id: number) =>
 export const createRaceType = (data: Omit<RaceType, "id">) => api.post<RaceType>("/race-types", data).then((r) => r.data);
 export const updateRaceType = (id: number, data: Partial<RaceType>) => api.put<RaceType>(`/race-types/${id}`, data).then((r) => r.data);
 export const deleteRaceType = (id: number) => api.delete(`/race-types/${id}`);
+export const getRaceTypeShadows = (id: number) =>
+  api.get<RaceTypeShadow[]>(`/race-types/${id}/shadows`).then((r) => r.data);
+export const createRaceTypeShadow = (
+  id: number,
+  data: { discipline_field: string; target_race_type_id: number }
+) => api.post<RaceTypeShadow>(`/race-types/${id}/shadows`, data).then((r) => r.data);
+export const deleteRaceTypeShadow = (shadowId: number) => api.delete(`/race-types/shadows/${shadowId}`);
 
 export const getRaces = () => api.get<Race[]>("/races").then((r) => r.data);
 export const getRace = (id: number) => api.get<Race>(`/races/${id}`).then((r) => r.data);

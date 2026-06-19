@@ -20,7 +20,7 @@ import {
   Tooltip as MuiTooltip,
   Link,
 } from "@mui/material";
-import { Edit, Delete, ArrowBack, ChevronLeft, ChevronRight, ReportProblem } from "@mui/icons-material";
+import { Edit, Delete, ArrowBack, ChevronLeft, ChevronRight, ReportProblem, Link as LinkIcon } from "@mui/icons-material";
 import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { getRaceType, getRaceTypeResults, deleteResult, formatTime, formatResult, getResultImages, imageUrl } from "../api";
 import type { RaceType, RaceResult, RaceImage } from "../types";
@@ -40,10 +40,20 @@ export default function RaceTypeHistory() {
       const [t, res] = await Promise.all([getRaceType(Number(id)), getRaceTypeResults(Number(id))]);
       setRaceType(t);
       setResults(res);
-      const entries = await Promise.all(
-        res.map(async (rr) => [rr.id, await getResultImages(rr.id).catch(() => [])] as const)
+      const srcIds = Array.from(
+        new Set(res.map((rr) => (rr.is_shadow && rr.shadow_parent_result_id ? rr.shadow_parent_result_id : rr.id)))
       );
-      setImagesByResult(Object.fromEntries(entries));
+      const entries = await Promise.all(
+        srcIds.map(async (sid) => [sid, await getResultImages(sid).catch(() => [])] as const)
+      );
+      const bySrc = Object.fromEntries(entries);
+      const imagesByResult: Record<number, RaceImage[]> = Object.fromEntries(
+        res.map((rr) => [
+          rr.id,
+          bySrc[rr.is_shadow && rr.shadow_parent_result_id ? rr.shadow_parent_result_id : rr.id] || [],
+        ])
+      );
+      setImagesByResult(imagesByResult);
     } catch {
       setError("Failed to load race type data");
     }
@@ -92,6 +102,8 @@ export default function RaceTypeHistory() {
 
   const visibleResults = results.filter((r) => !r.organizer_changed);
   const hiddenCount = results.length - visibleResults.length;
+  const shadowCount = results.filter((r) => r.is_shadow).length;
+  const realCount = results.length - shadowCount;
 
   const chartData = visibleResults.map((r) => ({
     year: r.year,
@@ -121,7 +133,8 @@ export default function RaceTypeHistory() {
               variant="outlined"
             />
             <Typography variant="body2" color="text.secondary">
-              {results.length} result{results.length === 1 ? "" : "s"} across all {raceType.name} races
+              {realCount} result{realCount === 1 ? "" : "s"} across all {raceType.name} races
+              {shadowCount > 0 && ` · ${shadowCount} linked via shadow discipline${shadowCount === 1 ? "" : "s"}`}
             </Typography>
           </Box>
         </Box>
@@ -231,15 +244,28 @@ export default function RaceTypeHistory() {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Link
-                      component="button"
-                      variant="body2"
-                      onClick={() => navigate(`/race/${r.race_id}`)}
-                      sx={{ textAlign: "left" }}
-                    >
-                      {r.race_name}
-                      {r.location ? ` — ${r.location}` : ""}
-                    </Link>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                      <Link
+                        component="button"
+                        variant="body2"
+                        onClick={() => navigate(`/race/${r.race_id}`)}
+                        sx={{ textAlign: "left" }}
+                      >
+                        {r.race_name}
+                        {r.location ? ` — ${r.location}` : ""}
+                      </Link>
+                      {r.is_shadow && (
+                        <MuiTooltip title={`Derived from ${r.shadow_source_race_type_name} “${r.shadow_discipline}” split — edit the source result to change it`}>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            icon={<LinkIcon sx={{ fontSize: 14 }} />}
+                            label={`via ${r.shadow_discipline}`}
+                            sx={{ textTransform: "capitalize" }}
+                          />
+                        </MuiTooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ fontWeight: "bold" }}>{formatResult(r)}</TableCell>
                   {r.discipline_fields &&
@@ -275,12 +301,22 @@ export default function RaceTypeHistory() {
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => navigate(`/result/${r.id}`)}>
+                    <IconButton
+                      onClick={() =>
+                        navigate(`/result/${r.is_shadow && r.shadow_parent_result_id ? r.shadow_parent_result_id : r.id}`)
+                      }
+                    >
                       <Edit />
                     </IconButton>
-                    <IconButton color="error" onClick={() => handleDelete(r.id)}>
-                      <Delete />
-                    </IconButton>
+                    {r.is_shadow ? (
+                      <IconButton color="error" disabled title="Derived result — delete the source result">
+                        <Delete />
+                      </IconButton>
+                    ) : (
+                      <IconButton color="error" onClick={() => handleDelete(r.id)}>
+                        <Delete />
+                      </IconButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

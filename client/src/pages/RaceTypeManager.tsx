@@ -20,11 +20,14 @@ import {
   Snackbar,
   Alert,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
-import { Add, Edit, Delete, TrendingUp } from "@mui/icons-material";
+import { Add, Edit, Delete, TrendingUp, Link as LinkIcon } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { getRaceTypes, createRaceType, updateRaceType, deleteRaceType } from "../api";
-import type { RaceType, ResultType } from "../types";
+import { getRaceTypes, createRaceType, updateRaceType, deleteRaceType, getRaceTypeShadows, createRaceTypeShadow, deleteRaceTypeShadow } from "../api";
+import type { RaceType, ResultType, RaceTypeShadow } from "../types";
 
 export default function RaceTypeManager() {
   const navigate = useNavigate();
@@ -36,6 +39,9 @@ export default function RaceTypeManager() {
   const [formResultType, setFormResultType] = useState<ResultType>("time");
   const [newField, setNewField] = useState("");
   const [error, setError] = useState("");
+  const [shadows, setShadows] = useState<RaceTypeShadow[]>([]);
+  const [shadowDiscipline, setShadowDiscipline] = useState("");
+  const [shadowTarget, setShadowTarget] = useState<number>(0);
 
   const loadTypes = async () => setTypes(await getRaceTypes());
 
@@ -49,16 +55,27 @@ export default function RaceTypeManager() {
     setFormFields([]);
     setFormResultType("time");
     setNewField("");
+    setShadows([]);
+    setShadowDiscipline("");
+    setShadowTarget(0);
     setDialogOpen(true);
   };
 
-  const openEdit = (t: RaceType) => {
+  const openEdit = async (t: RaceType) => {
     setEditingType(t);
     setFormName(t.name);
     setFormFields([...t.discipline_fields]);
     setFormResultType(t.result_type || "time");
     setNewField("");
+    setShadowDiscipline("");
+    setShadowTarget(0);
+    setShadows([]);
     setDialogOpen(true);
+    try {
+      setShadows(await getRaceTypeShadows(t.id));
+    } catch {
+      setError("Failed to load shadow links");
+    }
   };
 
   const addField = () => {
@@ -93,6 +110,36 @@ export default function RaceTypeManager() {
       loadTypes();
     } catch (err: any) {
       setError(err.response?.data?.error || "Cannot delete race type in use");
+    }
+  };
+
+  const reloadShadows = async (id: number) => {
+    try {
+      setShadows(await getRaceTypeShadows(id));
+    } catch {
+      setError("Failed to load shadow links");
+    }
+  };
+
+  const addShadow = async () => {
+    if (!editingType || !shadowDiscipline || !shadowTarget) return;
+    try {
+      await createRaceTypeShadow(editingType.id, { discipline_field: shadowDiscipline, target_race_type_id: shadowTarget });
+      setShadowDiscipline("");
+      setShadowTarget(0);
+      await reloadShadows(editingType.id);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to add shadow link");
+    }
+  };
+
+  const removeShadow = async (shadowId: number) => {
+    if (!editingType) return;
+    try {
+      await deleteRaceTypeShadow(shadowId);
+      await reloadShadows(editingType.id);
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to remove shadow link");
     }
   };
 
@@ -183,6 +230,62 @@ export default function RaceTypeManager() {
               </Button>
             </Box>
           </Box>
+
+          {editingType && formFields.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}>
+                <LinkIcon fontSize="small" /> Shadow Disciplines
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Mirror a discipline split into another race type (e.g. Triathlon <em>run</em> → Marathon).
+              </Typography>
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1 }}>
+                {shadows.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">None yet.</Typography>
+                ) : (
+                  shadows.map((s) => (
+                    <Chip
+                      key={s.id}
+                      label={`${s.discipline_field} → ${s.target_race_type_name}`}
+                      onDelete={() => removeShadow(s.id)}
+                      sx={{ textTransform: "capitalize" }}
+                    />
+                  ))
+                )}
+              </Box>
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Discipline</InputLabel>
+                  <Select
+                    value={shadowDiscipline}
+                    label="Discipline"
+                    onChange={(e) => setShadowDiscipline(e.target.value)}
+                  >
+                    {formFields.map((f) => (
+                      <MenuItem key={f} value={f} sx={{ textTransform: "capitalize" }}>{f}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
+                  <InputLabel>Target Race Type</InputLabel>
+                  <Select
+                    value={shadowTarget}
+                    label="Target Race Type"
+                    onChange={(e) => setShadowTarget(Number(e.target.value))}
+                  >
+                    {types
+                      .filter((t) => t.id !== editingType.id)
+                      .map((t) => (
+                        <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+                <Button onClick={addShadow} startIcon={<Add />} disabled={!shadowDiscipline || !shadowTarget}>
+                  Add Link
+                </Button>
+              </Box>
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
