@@ -50,6 +50,9 @@ export default function Dashboard() {
                         {race.result_type === "distance" && (
                           <Chip label="Distance" size="small" color="secondary" variant="outlined" />
                         )}
+                        {race.result_type === "laps" && (
+                          <Chip label="Laps" size="small" color="success" variant="outlined" />
+                        )}
                         {race.location && (
                           <Typography variant="caption" color="text.secondary">· {race.location}</Typography>
                         )}
@@ -81,9 +84,9 @@ export default function Dashboard() {
                       <Typography variant="body2" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
                         <Chip
-                          label={t.result_type === "distance" ? "Distance" : "Time"}
+                          label={t.result_type === "laps" ? "Laps" : t.result_type === "distance" ? "Distance" : "Time"}
                           size="small"
-                          color={t.result_type === "distance" ? "secondary" : "primary"}
+                          color={t.result_type === "laps" ? "success" : t.result_type === "distance" ? "secondary" : "primary"}
                           variant="outlined"
                         />
                         {t.discipline_fields.map((f) => (

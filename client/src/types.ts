@@ -1,4 +1,4 @@
-export type ResultType = "time" | "distance";
+export type ResultType = "time" | "distance" | "laps";
 
 export interface RaceType {
   id: number;
@@ -23,6 +23,7 @@ export interface RaceResult {
   year: number;
   total_time: number;
   distance: number;
+  laps: number;
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes: string;

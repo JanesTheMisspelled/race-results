@@ -1,6 +1,6 @@
 # Race Results Tracker
 
-A web application for storing and tracking race results over time. Supports different race types with discipline-specific fields, time-based and distance-based scoring, and progress charts.
+A web application for storing and tracking race results over time. Supports different race types with discipline-specific fields, time-based, distance-based, and laps-based scoring, and progress charts.
 
 ## Tech Stack
 
@@ -47,7 +47,7 @@ npm run build
 ## Features
 
 - **Race Types** — Define race types with custom discipline fields (e.g. swim, cycle, run for triathlon)
-- **Result Types** — Time-based (how long it took) or distance-based (how far you went in a fixed time)
+- **Result Types** — Time-based (how long it took), distance-based (how far you went in a fixed time), or laps-based (how many laps you completed)
 - **Races** — Named events with a type and location, reusable across years
 - **Results** — Per-year results with discipline splits, arbitrary additional info (weather, etc.), and notes
 - **Dashboard** — Overview of all races and recent results
@@ -139,7 +139,7 @@ race-results/
 | id | INTEGER PK | Auto-increment |
 | name | TEXT | Unique name |
 | discipline_fields | TEXT (JSON) | Array of field names, e.g. `["swim","cycle","run"]` |
-| result_type | TEXT | `"time"` or `"distance"` |
+| result_type | TEXT | `"time"`, `"distance"`, or `"laps"` |
 
 ### races
 | Column | Type | Description |
@@ -157,6 +157,7 @@ race-results/
 | year | INTEGER | Year of the result |
 | total_time | INTEGER | Finish time in seconds (for time-based races) |
 | distance | REAL | Distance in km (for distance-based races) |
+| laps | INTEGER | Number of laps completed (for laps-based races) |
 | discipline_data | TEXT (JSON) | Key-value splits, e.g. `{"swim": 1800, "cycle": 3600}` |
 | additional_info | TEXT (JSON) | Arbitrary key-value pairs, e.g. `{"Weather": "Sunny"}` |
 | notes | TEXT | Free-text notes |
@@ -189,3 +190,4 @@ The database is seeded with default race types on first run:
 | Cycling | — | Time |
 | Timed Run | — | Distance |
 | Timed Cycling | — | Distance |
+| Laps | — | Laps |

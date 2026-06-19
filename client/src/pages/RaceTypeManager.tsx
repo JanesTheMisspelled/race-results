@@ -121,9 +121,9 @@ export default function RaceTypeManager() {
                 <TableCell sx={{ textTransform: "capitalize" }}>{t.name}</TableCell>
                 <TableCell>
                   <Chip
-                    label={t.result_type === "distance" ? "Distance (km)" : "Time"}
+                    label={t.result_type === "laps" ? "Laps" : t.result_type === "distance" ? "Distance (km)" : "Time"}
                     size="small"
-                    color={t.result_type === "distance" ? "secondary" : "primary"}
+                    color={t.result_type === "laps" ? "success" : t.result_type === "distance" ? "secondary" : "primary"}
                     variant="outlined"
                   />
                 </TableCell>
@@ -165,6 +165,7 @@ export default function RaceTypeManager() {
           >
             <MenuItem value="time">Time — how long it took (lower is better)</MenuItem>
             <MenuItem value="distance">Distance — how far you went (higher is better)</MenuItem>
+            <MenuItem value="laps">Laps — how many laps you completed (higher is better)</MenuItem>
           </TextField>
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>

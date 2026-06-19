@@ -51,7 +51,7 @@ router.post("/", (req: Request, res: Response) => {
   if (!name || !Array.isArray(discipline_fields)) {
     return res.status(400).json({ error: "name and discipline_fields are required" });
   }
-  const rtype = result_type === "distance" ? "distance" : "time";
+  const rtype = result_type === "distance" || result_type === "laps" ? result_type : "time";
   try {
     const result = db.prepare("INSERT INTO race_types (name, discipline_fields, result_type) VALUES (?, ?, ?)").run(name, JSON.stringify(discipline_fields), rtype);
     const type = db.prepare("SELECT * FROM race_types WHERE id = ?").get(result.lastInsertRowid) as any;
@@ -69,7 +69,12 @@ router.put("/:id", (req: Request, res: Response) => {
 
   const newName = name ?? existing.name;
   const newFields = discipline_fields !== undefined ? discipline_fields : JSON.parse(existing.discipline_fields);
-  const newResultType = result_type === "distance" ? "distance" : (result_type === "time" ? "time" : existing.result_type || "time");
+  const newResultType =
+    result_type === "distance" || result_type === "laps"
+      ? result_type
+      : result_type === "time"
+        ? "time"
+        : existing.result_type || "time";
 
   try {
     db.prepare("UPDATE race_types SET name = ?, discipline_fields = ?, result_type = ? WHERE id = ?").run(newName, JSON.stringify(newFields), newResultType, req.params.id);

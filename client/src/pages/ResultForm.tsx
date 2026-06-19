@@ -47,6 +47,7 @@ export default function ResultForm() {
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [totalTime, setTotalTime] = useState("");
   const [distance, setDistance] = useState("");
+  const [laps, setLaps] = useState("");
   const [disciplineData, setDisciplineData] = useState<Record<string, string>>({});
   const [additionalInfo, setAdditionalInfo] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -70,6 +71,7 @@ export default function ResultForm() {
         setYear(result.year);
         setTotalTime(result.total_time ? formatTime(result.total_time) : "");
         setDistance(result.distance ? String(result.distance) : "");
+        setLaps(result.laps ? String(result.laps) : "");
         setDisciplineData(
           Object.fromEntries(Object.entries(result.discipline_data).map(([k, v]) => [k, formatTime(v)]))
         );
@@ -89,19 +91,26 @@ export default function ResultForm() {
   const selectedRace = races.find((r) => r.id === selectedRaceId);
   const selectedType = raceTypes.find((t) => t.id === selectedRace?.race_type_id);
   const disciplineFields = selectedType?.discipline_fields || [];
-  const isDistanceType = selectedType?.result_type === "distance";
+  const resultKind = selectedType?.result_type ?? "time";
+  const isDistanceType = resultKind === "distance";
+  const isLapsType = resultKind === "laps";
+  const isTimeType = resultKind === "time";
 
   const handleSave = async () => {
     if (!selectedRaceId || !year) {
       setError("Race and year are required");
       return;
     }
-    if (!isDistanceType && !totalTime) {
+    if (isTimeType && !totalTime) {
       setError("Total time is required for time-based races");
       return;
     }
     if (isDistanceType && !distance) {
       setError("Distance is required for distance-based races");
+      return;
+    }
+    if (isLapsType && !laps) {
+      setError("Laps are required for laps-based races");
       return;
     }
 
@@ -114,8 +123,9 @@ export default function ResultForm() {
     const data = {
       race_id: selectedRaceId,
       year,
-      total_time: isDistanceType ? 0 : parseTime(totalTime),
+      total_time: isTimeType ? parseTime(totalTime) : 0,
       distance: isDistanceType ? parseFloat(distance) : 0,
+      laps: isLapsType ? parseInt(laps, 10) : 0,
       discipline_data: parsedDiscipline,
       additional_info: Object.fromEntries(Object.entries(additionalInfo).filter(([, v]) => v.trim() !== "")),
       notes,
@@ -248,9 +258,9 @@ export default function ResultForm() {
           {selectedRace && (
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Chip
-                label={isDistanceType ? "Distance-based" : "Time-based"}
+                label={isLapsType ? "Laps-based" : isDistanceType ? "Distance-based" : "Time-based"}
                 size="small"
-                color={isDistanceType ? "secondary" : "primary"}
+                color={isLapsType ? "success" : isDistanceType ? "secondary" : "primary"}
                 variant="outlined"
               />
               <Chip label={selectedRace.race_type_name} size="small" />
@@ -269,7 +279,19 @@ export default function ResultForm() {
             slotProps={{ htmlInput: { min: 1900, max: 2100 } }}
           />
 
-          {isDistanceType ? (
+          {isLapsType ? (
+            <TextField
+              label="Laps Completed"
+              type="number"
+              value={laps}
+              onChange={(e) => setLaps(e.target.value)}
+              fullWidth
+              placeholder="12"
+              required
+              slotProps={{ htmlInput: { step: "1", min: 0 } }}
+              helperText="How many laps did you complete?"
+            />
+          ) : isDistanceType ? (
             <TextField
               label="Distance (km)"
               type="number"

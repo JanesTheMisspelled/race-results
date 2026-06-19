@@ -87,20 +87,23 @@ export default function RaceTypeHistory() {
   if (!raceType) return <Typography>Loading...</Typography>;
 
   const isDistanceType = raceType.result_type === "distance";
+  const isLapsType = raceType.result_type === "laps";
+  const isHigherBetter = isDistanceType || isLapsType;
 
   const visibleResults = results.filter((r) => !r.organizer_changed);
   const hiddenCount = results.length - visibleResults.length;
 
   const chartData = visibleResults.map((r) => ({
     year: r.year,
-    value: isDistanceType ? r.distance : r.total_time,
+    value: isLapsType ? r.laps : isDistanceType ? r.distance : r.total_time,
     label: formatResult(r),
     race: r.race_name || "",
   }));
 
   const yearTicks = Array.from(new Set(chartData.map((d) => d.year))).sort((a, b) => a - b);
 
-  const formatChartValue = (val: number) => (isDistanceType ? `${val.toFixed(2)} km` : formatTime(val));
+  const formatChartValue = (val: number) =>
+    isLapsType ? `${val} ${val === 1 ? "lap" : "laps"}` : isDistanceType ? `${val.toFixed(2)} km` : formatTime(val);
 
   return (
     <>
@@ -112,9 +115,9 @@ export default function RaceTypeHistory() {
           <Typography variant="h4">{raceType.name}</Typography>
           <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 0.5 }}>
             <Chip
-              label={isDistanceType ? "Distance-based" : "Time-based"}
+              label={isLapsType ? "Laps-based" : isDistanceType ? "Distance-based" : "Time-based"}
               size="small"
-              color={isDistanceType ? "secondary" : "primary"}
+              color={isLapsType ? "success" : isDistanceType ? "secondary" : "primary"}
               variant="outlined"
             />
             <Typography variant="body2" color="text.secondary">
@@ -127,7 +130,7 @@ export default function RaceTypeHistory() {
       {(chartData.length > 0 || hiddenCount > 0) && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Results by Year ({isDistanceType ? "Distance (km)" : "Total Time"})
+            Results by Year ({isLapsType ? "Laps" : isDistanceType ? "Distance (km)" : "Total Time"})
           </Typography>
           {hiddenCount > 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -149,8 +152,8 @@ export default function RaceTypeHistory() {
                 <YAxis
                   type="number"
                   dataKey="value"
-                  name={isDistanceType ? "Distance" : "Total Time"}
-                  domain={isDistanceType ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
+                  name={isLapsType ? "Laps" : isDistanceType ? "Distance" : "Total Time"}
+                  domain={isHigherBetter ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
                   tickFormatter={formatChartValue}
                 />
                 <ZAxis type="number" range={[60, 60]} />
@@ -180,7 +183,7 @@ export default function RaceTypeHistory() {
                 />
                 <Scatter
                   data={chartData}
-                  fill={isDistanceType ? "#9c27b0" : "#1976d2"}
+                  fill={isLapsType ? "#2e7d32" : isDistanceType ? "#9c27b0" : "#1976d2"}
                 />
               </ScatterChart>
             </ResponsiveContainer>
@@ -200,7 +203,7 @@ export default function RaceTypeHistory() {
               <TableRow>
                 <TableCell>Year</TableCell>
                 <TableCell>Race</TableCell>
-                <TableCell>{isDistanceType ? "Distance (km)" : "Total Time"}</TableCell>
+                <TableCell>{isLapsType ? "Laps" : isDistanceType ? "Distance (km)" : "Total Time"}</TableCell>
                 {raceType.discipline_fields.length > 0 &&
                   raceType.discipline_fields.map((f) => (
                     <TableCell key={f} sx={{ textTransform: "capitalize" }}>{f}</TableCell>

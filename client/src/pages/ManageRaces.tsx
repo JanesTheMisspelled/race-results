@@ -103,6 +103,9 @@ export default function ManageRaces() {
                 {race.result_type === "distance" && (
                   <Chip label="Distance" size="small" color="secondary" variant="outlined" sx={{ my: 1, ml: 0.5 }} />
                 )}
+                {race.result_type === "laps" && (
+                  <Chip label="Laps" size="small" color="success" variant="outlined" sx={{ my: 1, ml: 0.5 }} />
+                )}
                 {race.location && (
                   <Typography variant="body2" color="text.secondary">
                     {race.location}

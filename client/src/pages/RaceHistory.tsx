@@ -87,6 +87,8 @@ export default function RaceHistory() {
   if (!race) return <Typography>Loading...</Typography>;
 
   const isDistanceType = race.result_type === "distance";
+  const isLapsType = race.result_type === "laps";
+  const isHigherBetter = isDistanceType || isLapsType;
 
   const visibleResults = results.filter((r) => !r.organizer_changed);
   const hiddenCount = results.length - visibleResults.length;
@@ -95,11 +97,12 @@ export default function RaceHistory() {
     .sort((a, b) => a.year - b.year)
     .map((r) => ({
       year: r.year,
-      value: isDistanceType ? r.distance : r.total_time,
+      value: isLapsType ? r.laps : isDistanceType ? r.distance : r.total_time,
       label: formatResult(r),
     }));
 
-  const formatChartValue = (val: number) => isDistanceType ? `${val.toFixed(2)} km` : formatTime(val);
+  const formatChartValue = (val: number) =>
+    isLapsType ? `${val} ${val === 1 ? "lap" : "laps"}` : isDistanceType ? `${val.toFixed(2)} km` : formatTime(val);
 
   return (
     <>
@@ -112,9 +115,9 @@ export default function RaceHistory() {
           <Box sx={{ display: "flex", gap: 1, alignItems: "center", mt: 0.5 }}>
             <Chip label={race.race_type_name} />
             <Chip
-              label={isDistanceType ? "Distance-based" : "Time-based"}
+              label={isLapsType ? "Laps-based" : isDistanceType ? "Distance-based" : "Time-based"}
               size="small"
-              color={isDistanceType ? "secondary" : "primary"}
+              color={isLapsType ? "success" : isDistanceType ? "secondary" : "primary"}
               variant="outlined"
             />
             {race.location && (
@@ -130,7 +133,7 @@ export default function RaceHistory() {
       {(chartData.length > 1 || hiddenCount > 0) && (
         <Paper sx={{ p: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Progress Over Time ({isDistanceType ? "Distance (km)" : "Total Time"})
+            Progress Over Time ({isLapsType ? "Laps" : isDistanceType ? "Distance (km)" : "Total Time"})
           </Typography>
           {hiddenCount > 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -143,14 +146,14 @@ export default function RaceHistory() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis
-                  domain={isDistanceType ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
+                  domain={isHigherBetter ? [0, "dataMax + 1"] : ["dataMin - 60", "dataMax + 60"]}
                   tickFormatter={formatChartValue}
                 />
-                <Tooltip formatter={(value) => [formatChartValue(Number(value)), isDistanceType ? "Distance" : "Total Time"]} />
+                <Tooltip formatter={(value) => [formatChartValue(Number(value)), isLapsType ? "Laps" : isDistanceType ? "Distance" : "Total Time"]} />
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke={isDistanceType ? "#9c27b0" : "#1976d2"}
+                  stroke={isLapsType ? "#2e7d32" : isDistanceType ? "#9c27b0" : "#1976d2"}
                   strokeWidth={2}
                   dot={{ r: 5 }}
                 />
@@ -171,7 +174,7 @@ export default function RaceHistory() {
             <TableHead>
               <TableRow>
                 <TableCell>Year</TableCell>
-                <TableCell>{isDistanceType ? "Distance (km)" : "Total Time"}</TableCell>
+                <TableCell>{isLapsType ? "Laps" : isDistanceType ? "Distance (km)" : "Total Time"}</TableCell>
                 {race.discipline_fields && race.discipline_fields.length > 0 &&
                   race.discipline_fields.map((f) => <TableCell key={f} sx={{ textTransform: "capitalize" }}>{f}</TableCell>)}
                 <TableCell>Notes</TableCell>

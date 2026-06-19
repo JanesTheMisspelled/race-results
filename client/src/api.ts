@@ -25,6 +25,7 @@ export const createResult = (data: {
   year: number;
   total_time?: number;
   distance?: number;
+  laps?: number;
   discipline_data: Record<string, number>;
   additional_info: Record<string, string>;
   notes?: string;
@@ -64,6 +65,9 @@ export function parseTime(timeStr: string): number {
 export function formatResult(result: RaceResult): string {
   if (result.result_type === "distance") {
     return result.distance > 0 ? `${result.distance.toFixed(2)} km` : "-";
+  }
+  if (result.result_type === "laps") {
+    return result.laps > 0 ? `${result.laps} ${result.laps === 1 ? "lap" : "laps"}` : "-";
   }
   return formatTime(result.total_time);
 }
