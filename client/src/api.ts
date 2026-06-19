@@ -5,6 +5,8 @@ const api = axios.create({ baseURL: "/api" });
 
 export const getRaceTypes = () => api.get<RaceType[]>("/race-types").then((r) => r.data);
 export const getRaceType = (id: number) => api.get<RaceType>(`/race-types/${id}`).then((r) => r.data);
+export const getRaceTypeResults = (id: number) =>
+  api.get<RaceResult[]>(`/race-types/${id}/results`).then((r) => r.data);
 export const createRaceType = (data: Omit<RaceType, "id">) => api.post<RaceType>("/race-types", data).then((r) => r.data);
 export const updateRaceType = (id: number, data: Partial<RaceType>) => api.put<RaceType>(`/race-types/${id}`, data).then((r) => r.data);
 export const deleteRaceType = (id: number) => api.delete(`/race-types/${id}`);

@@ -19,6 +19,27 @@ router.get("/:id", (req, res) => {
         return res.status(404).json({ error: "Race type not found" });
     res.json({ ...type, discipline_fields: JSON.parse(type.discipline_fields) });
 });
+router.get("/:id/results", (req, res) => {
+    const type = database_1.default.prepare("SELECT * FROM race_types WHERE id = ?").get(req.params.id);
+    if (!type)
+        return res.status(404).json({ error: "Race type not found" });
+    const results = database_1.default
+        .prepare(`SELECT rr.*, r.name as race_name, r.location, r.race_type_id,
+              rt.name as race_type_name, rt.discipline_fields, rt.result_type
+       FROM race_results rr
+       JOIN races r ON rr.race_id = r.id
+       JOIN race_types rt ON r.race_type_id = rt.id
+       WHERE rt.id = ?
+       ORDER BY rr.year DESC, rr.id DESC`)
+        .all(req.params.id);
+    res.json(results.map((r) => ({
+        ...r,
+        discipline_data: JSON.parse(r.discipline_data),
+        additional_info: JSON.parse(r.additional_info),
+        discipline_fields: JSON.parse(r.discipline_fields),
+        organizer_changed: !!r.organizer_changed,
+    })));
+});
 router.post("/", (req, res) => {
     const { name, discipline_fields, result_type } = req.body;
     if (!name || !Array.isArray(discipline_fields)) {

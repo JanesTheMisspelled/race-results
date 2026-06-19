@@ -21,11 +21,13 @@ import {
   Alert,
   MenuItem,
 } from "@mui/material";
-import { Add, Edit, Delete } from "@mui/icons-material";
+import { Add, Edit, Delete, TrendingUp } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { getRaceTypes, createRaceType, updateRaceType, deleteRaceType } from "../api";
 import type { RaceType, ResultType } from "../types";
 
 export default function RaceTypeManager() {
+  const navigate = useNavigate();
   const [types, setTypes] = useState<RaceType[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<RaceType | null>(null);
@@ -115,7 +117,7 @@ export default function RaceTypeManager() {
           </TableHead>
           <TableBody>
             {types.map((t) => (
-              <TableRow key={t.id}>
+              <TableRow key={t.id} hover sx={{ cursor: "pointer" }} onClick={() => navigate(`/race-type/${t.id}`)}>
                 <TableCell sx={{ textTransform: "capitalize" }}>{t.name}</TableCell>
                 <TableCell>
                   <Chip
@@ -132,12 +134,15 @@ export default function RaceTypeManager() {
                     t.discipline_fields.map((f) => <Chip key={f} label={f} size="small" sx={{ mr: 0.5 }} />)
                   )}
                 </TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => openEdit(t)}>
-                    <Edit />
+                <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                  <IconButton size="small" onClick={() => navigate(`/race-type/${t.id}`)} title="View history">
+                    <TrendingUp fontSize="small" />
                   </IconButton>
-                  <IconButton color="error" onClick={() => handleDelete(t.id)}>
-                    <Delete />
+                  <IconButton size="small" onClick={() => openEdit(t)}>
+                    <Edit fontSize="small" />
+                  </IconButton>
+                  <IconButton size="small" color="error" onClick={() => handleDelete(t.id)}>
+                    <Delete fontSize="small" />
                   </IconButton>
                 </TableCell>
               </TableRow>

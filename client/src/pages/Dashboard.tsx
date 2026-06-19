@@ -2,20 +2,25 @@ import { useState, useEffect } from "react";
 import { Box, Typography, Grid, Card, CardContent, CardActions, Button, Chip, Tooltip } from "@mui/material";
 import { TrendingUp, ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { getRaces, getResults, formatResult } from "../api";
-import type { Race, RaceResult } from "../types";
+import { getRaces, getRaceTypes, getResults, formatResult } from "../api";
+import type { Race, RaceResult, RaceType } from "../types";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [races, setRaces] = useState<Race[]>([]);
-  const [recentResults, setRecentResults] = useState<RaceResult[]>([]);
+  const [raceTypes, setRaceTypes] = useState<RaceType[]>([]);
+  const [results, setResults] = useState<RaceResult[]>([]);
 
   useEffect(() => {
-    Promise.all([getRaces(), getResults()]).then(([r, res]) => {
+    Promise.all([getRaces(), getRaceTypes(), getResults()]).then(([r, t, res]) => {
       setRaces(r);
-      setRecentResults(res.slice(0, 10));
+      setRaceTypes(t);
+      setResults(res);
     });
   }, []);
+
+  const recentResults = results.slice(0, 10);
+  const typesWithResults = raceTypes.filter((t) => results.some((r) => r.race_type_id === t.id));
 
   return (
     <>
@@ -48,6 +53,40 @@ export default function Dashboard() {
       {races.length === 0 && (
         <Typography color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
           No races yet. Go to "Races" to add one.
+        </Typography>
+      )}
+
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Race Types
+      </Typography>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {typesWithResults.map((t) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={t.id}>
+            <Card sx={{ cursor: "pointer", height: "100%" }} onClick={() => navigate(`/race-type/${t.id}`)}>
+              <CardContent>
+                <Typography variant="h6" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, my: 1 }}>
+                  <Chip
+                    label={t.result_type === "distance" ? "Distance" : "Time"}
+                    size="small"
+                    color={t.result_type === "distance" ? "secondary" : "primary"}
+                    variant="outlined"
+                  />
+                  {t.discipline_fields.map((f) => (
+                    <Chip key={f} label={f} size="small" sx={{ textTransform: "capitalize" }} />
+                  ))}
+                </Box>
+              </CardContent>
+              <CardActions>
+                <Button size="small" startIcon={<TrendingUp />}>View History</Button>
+              </CardActions>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+      {typesWithResults.length === 0 && (
+        <Typography color="text.secondary" sx={{ textAlign: "center", mb: 4 }}>
+          No race types have results yet. Add a result to a race to see it here.
         </Typography>
       )}
 
