@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Grid, Card, CardContent, Chip, Tooltip } from "@mui/material";
+import { Box, Typography, Grid, List, ListItem, ListItemButton, Chip, Tooltip } from "@mui/material";
 import { ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getRaces, getRaceTypes, getResults, formatResult } from "../api";
@@ -31,24 +31,26 @@ export default function Dashboard() {
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             My Races
           </Typography>
-          <Grid container spacing={1.5} sx={{ mb: 3 }}>
+          <List disablePadding sx={{ mb: 3 }}>
             {races.map((race) => (
-              <Grid size={{ xs: 12, sm: 6 }} key={race.id}>
-                <Card sx={{ cursor: "pointer" }} onClick={() => navigate(`/race/${race.id}`)}>
-                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-                    <Typography variant="subtitle2">{race.name}</Typography>
-                    <Chip label={race.race_type_name} size="small" sx={{ mt: 0.5 }} />
-                    {race.result_type === "distance" && (
-                      <Chip label="Distance" size="small" color="secondary" variant="outlined" sx={{ mt: 0.5, ml: 0.5 }} />
-                    )}
-                    {race.location && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>{race.location}</Typography>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
+              <ListItem disablePadding divider key={race.id}>
+                <ListItemButton onClick={() => navigate(`/race/${race.id}`)} sx={{ py: 1 }}>
+                  <Box sx={{ width: "100%" }}>
+                    <Typography variant="body2">{race.name}</Typography>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+                      <Chip label={race.race_type_name} size="small" />
+                      {race.result_type === "distance" && (
+                        <Chip label="Distance" size="small" color="secondary" variant="outlined" />
+                      )}
+                      {race.location && (
+                        <Typography variant="caption" color="text.secondary">· {race.location}</Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </ListItemButton>
+              </ListItem>
             ))}
-          </Grid>
+          </List>
           {races.length === 0 && (
             <Typography color="text.secondary" sx={{ textAlign: "center", mb: 3 }}>
               No races yet. Go to "Races" to add one.
@@ -58,12 +60,12 @@ export default function Dashboard() {
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Race Types
           </Typography>
-          <Grid container spacing={1.5} sx={{ mb: 3 }}>
+          <List disablePadding sx={{ mb: 3 }}>
             {typesWithResults.map((t) => (
-              <Grid size={{ xs: 12, sm: 6 }} key={t.id}>
-                <Card sx={{ cursor: "pointer", height: "100%" }} onClick={() => navigate(`/race-type/${t.id}`)}>
-                  <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
-                    <Typography variant="subtitle2" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
+              <ListItem disablePadding divider key={t.id}>
+                <ListItemButton onClick={() => navigate(`/race-type/${t.id}`)} sx={{ py: 1 }}>
+                  <Box sx={{ width: "100%" }}>
+                    <Typography variant="body2" sx={{ textTransform: "capitalize" }}>{t.name}</Typography>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.5 }}>
                       <Chip
                         label={t.result_type === "distance" ? "Distance" : "Time"}
@@ -75,11 +77,11 @@ export default function Dashboard() {
                         <Chip key={f} label={f} size="small" sx={{ textTransform: "capitalize" }} />
                       ))}
                     </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
+                  </Box>
+                </ListItemButton>
+              </ListItem>
             ))}
-          </Grid>
+          </List>
           {typesWithResults.length === 0 && (
             <Typography color="text.secondary" sx={{ textAlign: "center", mb: 3 }}>
               No race types have results yet. Add a result to a race to see it here.
