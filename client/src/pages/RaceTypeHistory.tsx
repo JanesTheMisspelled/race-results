@@ -21,7 +21,7 @@ import {
   Link,
 } from "@mui/material";
 import { Edit, Delete, ArrowBack, ChevronLeft, ChevronRight, ReportProblem, Link as LinkIcon } from "@mui/icons-material";
-import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { getRaceType, getRaceTypeResults, deleteResult, formatTime, formatResult, getResultImages, imageUrl } from "../api";
 import type { RaceType, RaceResult, RaceImage } from "../types";
 
@@ -105,14 +105,28 @@ export default function RaceTypeHistory() {
   const shadowCount = results.filter((r) => r.is_shadow).length;
   const realCount = results.length - shadowCount;
 
-  const chartData = visibleResults.map((r) => ({
-    year: r.year,
-    value: isLapsType ? r.laps : isDistanceType ? r.distance : r.total_time,
-    label: formatResult(r),
-    race: r.race_name || "",
-  }));
+  const realChartData = visibleResults
+    .filter((r) => !r.is_shadow)
+    .map((r) => ({
+      year: r.year,
+      value: isLapsType ? r.laps : isDistanceType ? r.distance : r.total_time,
+      label: formatResult(r),
+      race: r.race_name || "",
+    }));
+  const shadowChartData = visibleResults
+    .filter((r) => r.is_shadow)
+    .map((r) => ({
+      year: r.year,
+      value: isLapsType ? r.laps : isDistanceType ? r.distance : r.total_time,
+      label: formatResult(r),
+      race: r.race_name || "",
+    }));
+  const chartData = [...realChartData, ...shadowChartData];
 
   const yearTicks = Array.from(new Set(chartData.map((d) => d.year))).sort((a, b) => a - b);
+
+  const baseColor = isLapsType ? "#2e7d32" : isDistanceType ? "#9c27b0" : "#1976d2";
+  const shadowColor = "#ed6c02";
 
   const formatChartValue = (val: number) =>
     isLapsType ? `${val} ${val === 1 ? "lap" : "laps"}` : isDistanceType ? `${val.toFixed(2)} km` : formatTime(val);
@@ -170,6 +184,7 @@ export default function RaceTypeHistory() {
                   tickFormatter={formatChartValue}
                 />
                 <ZAxis type="number" range={[60, 60]} />
+                <Legend />
                 <Tooltip
                   cursor={{ strokeDasharray: "3 3" }}
                   content={(props) => {
@@ -194,10 +209,12 @@ export default function RaceTypeHistory() {
                     );
                   }}
                 />
-                <Scatter
-                  data={chartData}
-                  fill={isLapsType ? "#2e7d32" : isDistanceType ? "#9c27b0" : "#1976d2"}
-                />
+                {realChartData.length > 0 && (
+                  <Scatter name="Results" data={realChartData} fill={baseColor} />
+                )}
+                {shadowChartData.length > 0 && (
+                  <Scatter name="Shadow results" data={shadowChartData} fill={shadowColor} />
+                )}
               </ScatterChart>
             </ResponsiveContainer>
           )}
