@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Grid, List, ListItem, ListItemButton, Chip, Tooltip } from "@mui/material";
+import { Box, Typography, Grid, List, ListItem, ListItemButton, Chip, Tooltip, Pagination } from "@mui/material";
 import { ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getRaces, getRaceTypes, getResults, formatResult } from "../api";
@@ -10,6 +10,8 @@ export default function Dashboard() {
   const [races, setRaces] = useState<Race[]>([]);
   const [raceTypes, setRaceTypes] = useState<RaceType[]>([]);
   const [results, setResults] = useState<RaceResult[]>([]);
+  const [page, setPage] = useState(1);
+  const pageSize = 100;
 
   useEffect(() => {
     Promise.all([getRaces(), getRaceTypes(), getResults()]).then(([r, t, res]) => {
@@ -19,7 +21,8 @@ export default function Dashboard() {
     });
   }, []);
 
-  const recentResults = results.slice(0, 10);
+  const recentResults = results.slice((page - 1) * pageSize, page * pageSize);
+  const pageCount = Math.max(1, Math.ceil(results.length / pageSize));
   const typesWithResults = raceTypes.filter((t) => results.some((r) => r.race_type_id === t.id));
   const resultCountByRace = new Map<number, number>();
   results.forEach((r) => resultCountByRace.set(r.race_id, (resultCountByRace.get(r.race_id) ?? 0) + 1));
@@ -151,6 +154,18 @@ export default function Dashboard() {
                   </tr>
                 ))}
               </tbody>
+            </Box>
+          )}
+          {results.length > pageSize && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                count={pageCount}
+                page={page}
+                onChange={(_, value) => {
+                  setPage(value);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
             </Box>
           )}
         </Grid>
