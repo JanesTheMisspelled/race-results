@@ -91,11 +91,13 @@ export default function RaceHistory() {
   const visibleResults = results.filter((r) => !r.organizer_changed);
   const hiddenCount = results.length - visibleResults.length;
 
-  const chartData = visibleResults.map((r) => ({
-    year: r.year,
-    value: isDistanceType ? r.distance : r.total_time,
-    label: formatResult(r),
-  }));
+  const chartData = [...visibleResults]
+    .sort((a, b) => a.year - b.year)
+    .map((r) => ({
+      year: r.year,
+      value: isDistanceType ? r.distance : r.total_time,
+      label: formatResult(r),
+    }));
 
   const formatChartValue = (val: number) => isDistanceType ? `${val.toFixed(2)} km` : formatTime(val);
 

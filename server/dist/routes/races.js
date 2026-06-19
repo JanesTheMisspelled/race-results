@@ -40,13 +40,14 @@ router.get("/:id/results", (req, res) => {
        JOIN races r ON rr.race_id = r.id
        JOIN race_types rt ON r.race_type_id = rt.id
        WHERE rr.race_id = ?
-       ORDER BY rr.year`)
+       ORDER BY rr.year DESC, rr.id DESC`)
         .all(req.params.id);
     res.json(results.map((r) => ({
         ...r,
         discipline_data: JSON.parse(r.discipline_data),
         additional_info: JSON.parse(r.additional_info),
         discipline_fields: JSON.parse(r.discipline_fields),
+        organizer_changed: !!r.organizer_changed,
     })));
 });
 router.post("/", (req, res) => {
