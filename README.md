@@ -184,10 +184,10 @@ The database is seeded with default race types on first run:
 | Type | Disciplines | Result Type |
 |------|-------------|-------------|
 | Running | — | Time |
-| Triathlon | swim, cycle, run | Time |
-| Duathlon | run_1, cycle, run_2 | Time |
+| Triathlon | swim, bike, run | Time |
+| Duathlon | run_1, bike, run_2 | Time |
 | Swimming | — | Time |
 | Cycling | — | Time |
 | Timed Run | — | Distance |
 | Timed Cycling | — | Distance |
-| Laps | — | Laps |
+| Backyard Ultra | — | Laps |
