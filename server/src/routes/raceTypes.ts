@@ -13,6 +13,18 @@ router.get("/", (_req: Request, res: Response) => {
   );
 });
 
+router.get("/shadows", (_req: Request, res: Response) => {
+  const rows = db
+    .prepare(
+      `SELECT s.*, rt.name as target_race_type_name, rt.result_type as target_result_type
+       FROM race_type_shadows s
+       JOIN race_types rt ON s.target_race_type_id = rt.id
+       ORDER BY s.target_race_type_id, s.discipline_field`
+    )
+    .all();
+  res.json(rows);
+});
+
 router.get("/:id", (req: Request, res: Response) => {
   const type = db.prepare("SELECT * FROM race_types WHERE id = ?").get(req.params.id) as any;
   if (!type) return res.status(404).json({ error: "Race type not found" });

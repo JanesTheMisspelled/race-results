@@ -2,26 +2,28 @@ import { useState, useEffect } from "react";
 import { Box, Typography, Grid, List, ListItem, ListItemButton, Chip, Tooltip, Pagination } from "@mui/material";
 import { ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { getRaces, getRaceTypes, getResults, formatResult } from "../api";
-import type { Race, RaceResult, RaceType } from "../types";
+import { getRaces, getRaceTypes, getResults, formatResult, getAllRaceTypeShadows } from "../api";
+import type { Race, RaceResult, RaceType, RaceTypeShadow } from "../types";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [races, setRaces] = useState<Race[]>([]);
   const [raceTypes, setRaceTypes] = useState<RaceType[]>([]);
   const [results, setResults] = useState<RaceResult[]>([]);
+  const [shadows, setShadows] = useState<RaceTypeShadow[]>([]);
   const [page, setPage] = useState(1);
   const [racesPage, setRacesPage] = useState(1);
   const [typesPage, setTypesPage] = useState(1);
   const pageSize = 100;
-  const racesPageSize = 8;
-  const typesPageSize = 8;
+  const racesPageSize = 10;
+  const typesPageSize = 10;
 
   useEffect(() => {
-    Promise.all([getRaces(), getRaceTypes(), getResults()]).then(([r, t, res]) => {
+    Promise.all([getRaces(), getRaceTypes(), getResults(), getAllRaceTypeShadows()]).then(([r, t, res, sh]) => {
       setRaces(r);
       setRaceTypes(t);
       setResults(res);
+      setShadows(sh);
     });
   }, []);
 
@@ -38,14 +40,29 @@ export default function Dashboard() {
     if (r.race_type_id == null) return;
     resultCountByType.set(r.race_type_id, (resultCountByType.get(r.race_type_id) ?? 0) + 1);
   });
-  const typesSorted = [...typesWithResults].sort((a, b) => (resultCountByType.get(b.id) ?? 0) - (resultCountByType.get(a.id) ?? 0));
+  const shadowCountByType = new Map<number, number>();
+  const sourceFieldsByType = new Map<number, string[]>();
+  raceTypes.forEach((t) => sourceFieldsByType.set(t.id, t.discipline_fields));
+  for (const s of shadows) {
+    const sourceFields = sourceFieldsByType.get(s.source_race_type_id);
+    if (!sourceFields || !sourceFields.includes(s.discipline_field)) continue;
+    for (const r of results) {
+      if (r.race_type_id !== s.source_race_type_id) continue;
+      const val = Number(r.discipline_data?.[s.discipline_field]);
+      if (!val || val <= 0) continue;
+      shadowCountByType.set(s.target_race_type_id, (shadowCountByType.get(s.target_race_type_id) ?? 0) + 1);
+    }
+  }
+  const sortCountByType = new Map<number, number>();
+  raceTypes.forEach((t) =>
+    sortCountByType.set(t.id, (resultCountByType.get(t.id) ?? 0) + (shadowCountByType.get(t.id) ?? 0))
+  );
+  const typesSorted = [...typesWithResults].sort((a, b) => (sortCountByType.get(b.id) ?? 0) - (sortCountByType.get(a.id) ?? 0));
   const typesPageCount = Math.max(1, Math.ceil(typesSorted.length / typesPageSize));
   const visibleTypes = typesSorted.slice((typesPage - 1) * typesPageSize, typesPage * typesPageSize);
 
   return (
     <>
-      <Typography variant="h4" sx={{ mb: 3 }}>Dashboard</Typography>
-
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 5 }}>
           <Typography variant="h6" sx={{ mb: 1.5 }}>

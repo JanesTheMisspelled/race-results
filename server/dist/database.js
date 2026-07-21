@@ -121,7 +121,7 @@ if (seedRaceTypes.count === 0) {
     insertType.run("Cycling", JSON.stringify([]), "time");
     insertType.run("Timed Run", JSON.stringify([]), "distance");
     insertType.run("Timed Cycling", JSON.stringify([]), "distance");
-    insertType.run("Backyard Ultra", JSON.stringify([]), "laps");
+    insertType.run("Laps", JSON.stringify([]), "laps");
 }
 exports.default = db;
 //# sourceMappingURL=database.js.map

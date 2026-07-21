@@ -13,6 +13,15 @@ router.get("/", (_req, res) => {
         discipline_fields: JSON.parse(t.discipline_fields),
     })));
 });
+router.get("/shadows", (_req, res) => {
+    const rows = database_1.default
+        .prepare(`SELECT s.*, rt.name as target_race_type_name, rt.result_type as target_result_type
+       FROM race_type_shadows s
+       JOIN race_types rt ON s.target_race_type_id = rt.id
+       ORDER BY s.target_race_type_id, s.discipline_field`)
+        .all();
+    res.json(rows);
+});
 router.get("/:id", (req, res) => {
     const type = database_1.default.prepare("SELECT * FROM race_types WHERE id = ?").get(req.params.id);
     if (!type)

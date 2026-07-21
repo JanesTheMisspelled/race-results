@@ -12,6 +12,8 @@ export const updateRaceType = (id: number, data: Partial<RaceType>) => api.put<R
 export const deleteRaceType = (id: number) => api.delete(`/race-types/${id}`);
 export const getRaceTypeShadows = (id: number) =>
   api.get<RaceTypeShadow[]>(`/race-types/${id}/shadows`).then((r) => r.data);
+export const getAllRaceTypeShadows = () =>
+  api.get<RaceTypeShadow[]>("/race-types/shadows").then((r) => r.data);
 export const createRaceTypeShadow = (
   id: number,
   data: { discipline_field: string; target_race_type_id: number }
