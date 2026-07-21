@@ -89,10 +89,7 @@ export default function Dashboard() {
               <Pagination
                 count={racesPageCount}
                 page={racesPage}
-                onChange={(_, value) => {
-                  setRacesPage(value);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onChange={(_, value) => setRacesPage(value)}
               />
             </Box>
           )}
@@ -137,10 +134,7 @@ export default function Dashboard() {
               <Pagination
                 count={typesPageCount}
                 page={typesPage}
-                onChange={(_, value) => {
-                  setTypesPage(value);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
+                onChange={(_, value) => setTypesPage(value)}
               />
             </Box>
           )}
