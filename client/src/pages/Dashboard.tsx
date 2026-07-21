@@ -11,7 +11,11 @@ export default function Dashboard() {
   const [raceTypes, setRaceTypes] = useState<RaceType[]>([]);
   const [results, setResults] = useState<RaceResult[]>([]);
   const [page, setPage] = useState(1);
+  const [racesPage, setRacesPage] = useState(1);
+  const [typesPage, setTypesPage] = useState(1);
   const pageSize = 100;
+  const racesPageSize = 8;
+  const typesPageSize = 8;
 
   useEffect(() => {
     Promise.all([getRaces(), getRaceTypes(), getResults()]).then(([r, t, res]) => {
@@ -26,11 +30,17 @@ export default function Dashboard() {
   const typesWithResults = raceTypes.filter((t) => results.some((r) => r.race_type_id === t.id));
   const resultCountByRace = new Map<number, number>();
   results.forEach((r) => resultCountByRace.set(r.race_id, (resultCountByRace.get(r.race_id) ?? 0) + 1));
+  const racesSorted = [...races].sort((a, b) => (resultCountByRace.get(b.id) ?? 0) - (resultCountByRace.get(a.id) ?? 0));
+  const racesPageCount = Math.max(1, Math.ceil(racesSorted.length / racesPageSize));
+  const visibleRaces = racesSorted.slice((racesPage - 1) * racesPageSize, racesPage * racesPageSize);
   const resultCountByType = new Map<number, number>();
   results.forEach((r) => {
     if (r.race_type_id == null) return;
     resultCountByType.set(r.race_type_id, (resultCountByType.get(r.race_type_id) ?? 0) + 1);
   });
+  const typesSorted = [...typesWithResults].sort((a, b) => (resultCountByType.get(b.id) ?? 0) - (resultCountByType.get(a.id) ?? 0));
+  const typesPageCount = Math.max(1, Math.ceil(typesSorted.length / typesPageSize));
+  const visibleTypes = typesSorted.slice((typesPage - 1) * typesPageSize, typesPage * typesPageSize);
 
   return (
     <>
@@ -42,7 +52,7 @@ export default function Dashboard() {
             My Races
           </Typography>
           <List disablePadding sx={{ mb: 3 }}>
-            {races.map((race) => (
+            {visibleRaces.map((race) => (
               <ListItem disablePadding divider key={race.id}>
                 <ListItemButton onClick={() => navigate(`/race/${race.id}`)} sx={{ py: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1 }}>
@@ -74,12 +84,24 @@ export default function Dashboard() {
               No races yet. Go to "Races" to add one.
             </Typography>
           )}
+          {racesSorted.length > racesPageSize && (
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+              <Pagination
+                count={racesPageCount}
+                page={racesPage}
+                onChange={(_, value) => {
+                  setRacesPage(value);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </Box>
+          )}
 
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Race Types
           </Typography>
           <List disablePadding sx={{ mb: 3 }}>
-            {typesWithResults.map((t) => (
+            {visibleTypes.map((t) => (
               <ListItem disablePadding divider key={t.id}>
                 <ListItemButton onClick={() => navigate(`/race-type/${t.id}`)} sx={{ py: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", width: "100%", gap: 1 }}>
@@ -109,6 +131,18 @@ export default function Dashboard() {
             <Typography color="text.secondary" sx={{ textAlign: "center", mb: 3 }}>
               No race types have results yet. Add a result to a race to see it here.
             </Typography>
+          )}
+          {typesSorted.length > typesPageSize && (
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+              <Pagination
+                count={typesPageCount}
+                page={typesPage}
+                onChange={(_, value) => {
+                  setTypesPage(value);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </Box>
           )}
         </Grid>
 
